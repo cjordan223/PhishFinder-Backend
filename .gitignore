@@ -2,10 +2,4 @@
 node_modules
 .DS_Store
 .vscode/*
-!.vscode/extensions.json
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+
