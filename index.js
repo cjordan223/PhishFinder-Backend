@@ -1,12 +1,14 @@
+//index.js
 import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
+import { connectDB, saveEmailAnalysis } from './src/config/db.js'; // Import the connectDB function
 
 dotenv.config(); // Load environment variables
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8080;
 const SAFE_BROWSING_API_KEY = process.env.SAFE_BROWSING_API_KEY;
 const SAFE_BROWSING_URL = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${SAFE_BROWSING_API_KEY}`;
 
@@ -138,6 +140,29 @@ async function checkUrlsWithSafeBrowsing(urls) {
   }
 }
 
+
+app.post('/api/saveEmailAnalysis', async (req, res) => {
+  const { id, sender, subject, body, extractedUrls, timestamp, safebrowsingFlag } = req.body;
+
+  const emailData = {
+    id,
+    sender,
+    subject,
+    body,
+    extractedUrls,
+    timestamp: new Date(timestamp),
+    safebrowsingFlag,
+  };
+
+  try {
+    const resultId = await saveEmailAnalysis(emailData);
+    res.json({ success: true, id: resultId });
+  } catch (error) {
+    console.error('Error saving email analysis:', error);
+    res.status(500).json({ success: false, error: 'Error saving email analysis.' });
+  }
+});
+
 app.post('/api/analyze', async (req, res) => {
   try {
     let { text, isHtml } = req.body;
@@ -224,8 +249,13 @@ app.post('/api/ai-analyze', async (req, res) => {
   }
 });
 
-
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Backend server running on port ${PORT}`);
+// Connect to MongoDB before starting the server
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Backend server running on port ${PORT}`);
+  });
+}).catch((error) => {
+  console.error("Failed to start server:", error);
+  process.exit(1); // Exit the process if unable to connect to MongoDB
 });
+

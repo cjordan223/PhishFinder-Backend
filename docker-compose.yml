@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: phishfinder_mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      - "27017:27017"  # Exposes MongoDB on port 27017 for localhost access
+    volumes:
+      - mongo_data:/data/db  # Persists MongoDB data between container restarts
+
+volumes:
+  mongo_data:
