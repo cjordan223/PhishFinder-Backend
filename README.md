@@ -1,6 +1,6 @@
 # PhishFinder-Backend
 
-Handles API and sensitive data. DB for user behavior can live here eventually.
+Handles API and sensitive data. Email objects are sent to a cloud DB for storage and analytics.
 
 [Front End Code](https://github.com/cjordan223/PhishFinder/)
 
@@ -24,6 +24,8 @@ Handles API and sensitive data. DB for user behavior can live here eventually.
     * Attachments and Links: Track if certain senders commonly send attachments or links, which could be useful for detecting phishing behavior.
 
 ## 2. Database Schema for Email Profiling
+
+
 | Field                | Type         | Description                                       |
 |----------------------|--------------|---------------------------------------------------|
 | `id`                 | UUID         | Unique identifier for each sender                 |
