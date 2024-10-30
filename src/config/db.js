@@ -1,14 +1,13 @@
-// db.js
-
 import { MongoClient } from 'mongodb';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const uri = process.env.MONGO_URI;
+const uri = process.env.MONGO_URI; // MongoDB connection URI
 let client;
 let db;
 
+// Function to connect to MongoDB
 export async function connectDB() {
   try {
     if (!client) {
@@ -24,6 +23,7 @@ export async function connectDB() {
   }
 }
 
+// Function to disconnect from MongoDB
 export async function disconnectDB() {
   if (client) {
     await client.close();

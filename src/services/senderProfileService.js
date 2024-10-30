@@ -1,5 +1,6 @@
 import { connectDB } from '../config/db.js';
 
+// Function to save or update sender profile in the database
 export async function saveOrUpdateSenderProfile(emailData) {
   const db = await connectDB();
   const senderEmail = emailData.from;

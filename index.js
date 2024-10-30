@@ -1,19 +1,20 @@
-//index.js
+// Import necessary modules
 import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 import { connectDB, saveEmailAnalysis } from './src/config/db.js'; // Import the connectDB function
 
-dotenv.config(); // Load environment variables
+dotenv.config(); // Load environment variables from .env file
 
 const app = express();
-const PORT = process.env.PORT || 8080;
-const SAFE_BROWSING_API_KEY = process.env.SAFE_BROWSING_API_KEY;
-const SAFE_BROWSING_URL = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${SAFE_BROWSING_API_KEY}`;
+const PORT = process.env.PORT || 8080; // Set the port for the server
+const SAFE_BROWSING_API_KEY = process.env.SAFE_BROWSING_API_KEY; // Safe Browsing API key
+const SAFE_BROWSING_URL = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${SAFE_BROWSING_API_KEY}`; // Safe Browsing API URL
 
 // Allowed origins for CORS
 const allowedOrigins = [
+  'http://localhost:8080',
   'http://localhost:3000',
   'chrome-extension://ogajmmpomfocfpjhalbfjhjeikidgkef',
 ];
@@ -32,23 +33,19 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions)); // Apply the CORS middleware
-app.use(express.json());
+app.use(express.json()); // Middleware to parse JSON bodies
 
-// Enhanced URL extraction from HTML content
+// Function to extract URLs from HTML content
 function extractUrlsFromHtml(htmlContent) {
-  // First try to extract URLs from href attributes
   const hrefRegex = /href=["'](https?:\/\/[^"']+)["']/g;
   const hrefMatches = [...htmlContent.matchAll(hrefRegex)].map(match => match[1]);
   
-  // Then try to extract URLs from anchor text
   const anchorRegex = />https?:\/\/[^<\s]+</g;
   const anchorMatches = [...htmlContent.matchAll(anchorRegex)]
     .map(match => match[0].slice(1, -1)); // Remove > and <
   
-  // Combine and clean up URLs
   const allUrls = [...new Set([...hrefMatches, ...anchorMatches])]
     .map(url => {
-      // Clean up the URL
       return url
         .trim()
         .replace(/['"<>]/g, '') // Remove quotes and angle brackets
@@ -57,7 +54,6 @@ function extractUrlsFromHtml(htmlContent) {
         .replace(/\/$/, ''); // Remove trailing slash
     })
     .filter(url => {
-      // Validate URL format
       try {
         new URL(url);
         return true;
@@ -70,7 +66,7 @@ function extractUrlsFromHtml(htmlContent) {
   return allUrls;
 }
 
-// Extract URLs from plain text
+// Function to extract URLs from plain text
 function extractUrlsFromText(text) {
   const urlRegex = /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)/g;
   const matches = text.match(urlRegex) || [];
@@ -85,7 +81,6 @@ function extractUrlsFromText(text) {
         .replace(/\/$/, ''); // Remove trailing slash
     })
     .filter(url => {
-      // Validate URL format
       try {
         new URL(url);
         return true;
@@ -98,11 +93,10 @@ function extractUrlsFromText(text) {
   return cleanedUrls;
 }
 
-// Safe Browsing API URL check with deduplication
+// Function to check URLs with Safe Browsing API
 async function checkUrlsWithSafeBrowsing(urls) {
   if (!urls || urls.length === 0) return [];
 
-  // Remove duplicate URLs
   const uniqueUrls = [...new Set(urls)];
 
   const requestBody = {
@@ -131,7 +125,6 @@ async function checkUrlsWithSafeBrowsing(urls) {
     }
 
     const data = await response.json();
-    // Return unique flagged URLs only
     const flaggedUrls = data.matches ? data.matches.map(match => ({ url: match.threat.url, threatType: match.threatType })) : [];
     return [...new Set(flaggedUrls.map(JSON.stringify))].map(JSON.parse); // Deduplicate flagged URLs
   } catch (error) {
@@ -140,7 +133,7 @@ async function checkUrlsWithSafeBrowsing(urls) {
   }
 }
 
-
+// Route to save email analysis to the database
 app.post('/api/saveEmailAnalysis', async (req, res) => {
   const { id, sender, subject, body, extractedUrls, timestamp, safebrowsingFlag } = req.body;
 
@@ -163,6 +156,7 @@ app.post('/api/saveEmailAnalysis', async (req, res) => {
   }
 });
 
+// Route to analyze content for URLs and check them with Safe Browsing API
 app.post('/api/analyze', async (req, res) => {
   try {
     let { text, isHtml } = req.body;
@@ -174,7 +168,6 @@ app.post('/api/analyze', async (req, res) => {
     const urls = isHtml ? extractUrlsFromHtml(text) : extractUrlsFromText(text);
     console.log('Extracted URLs:', urls);
 
-    // Check URLs with Safe Browsing API
     const flaggedUrls = await checkUrlsWithSafeBrowsing(urls);
     console.log('Flagged URLs:', flaggedUrls);
 
@@ -197,11 +190,10 @@ app.post('/api/analyze', async (req, res) => {
   }
 });
 
-
+// Route to analyze content using an AI content detector API
 app.post('/api/ai-analyze', async (req, res) => {
   let { text } = req.body;
 
-  // Trim the text to a maximum of 298 words to account for API discrepancies
   let wordsArray = text.trim().split(/\s+/); // Split by spaces
   const wordCount = wordsArray.length;
 
@@ -213,7 +205,6 @@ app.post('/api/ai-analyze', async (req, res) => {
     text = wordsArray.join(' '); // Rebuild the text from the trimmed array
   }
 
-  // Ensure the text has at least 10 words after trimming
   if (wordsArray.length < 10) {
     console.error('Text length validation failed: Less than 10 words.');
     return res.status(400).json({ error: 'Text must be between 10 and 298 words.' });
@@ -249,15 +240,21 @@ app.post('/api/ai-analyze', async (req, res) => {
   }
 });
 
-// START of logic to handle dashbaord display - build here
 
+
+
+
+
+
+// (ALMOST) EVERYTHING BELOW IS RELATED TO THE METRICS. PROBABLY NEEDS ITS OWN FILE / STRUCTURE BUT HAVENT'T HAD TIME
+
+// Route to fetch metrics for the dashboard
 app.get('/api/metrics/:timeRange', async (req, res) => {
   try {
     const { timeRange } = req.params;
     const db = await connectDB();
     const emailsCollection = db.collection('emails');
 
-    // Calculate date range
     const endDate = new Date();
     const startDate = new Date();
     switch (timeRange) {
@@ -274,7 +271,6 @@ app.get('/api/metrics/:timeRange', async (req, res) => {
         startDate.setDate(endDate.getDate() - 7);
     }
 
-    // Get current period metrics
     const currentPeriodMetrics = await emailsCollection.aggregate([
       {
         $match: {
@@ -293,7 +289,6 @@ app.get('/api/metrics/:timeRange', async (req, res) => {
       }
     ]).toArray();
 
-    // Get previous period metrics for comparison
     const previousStartDate = new Date(startDate);
     previousStartDate.setDate(previousStartDate.getDate() - timeRange);
     
@@ -312,7 +307,6 @@ app.get('/api/metrics/:timeRange', async (req, res) => {
       }
     ]).toArray();
 
-    // Get daily statistics for the chart
     const dailyStats = await emailsCollection.aggregate([
       {
         $match: {
@@ -341,7 +335,6 @@ app.get('/api/metrics/:timeRange', async (req, res) => {
       }
     ]).toArray();
 
-    // Calculate average risk score  
     const averageRiskScore = 85; // Placeholder 
 
     res.json({
@@ -369,4 +362,3 @@ connectDB().then(() => {
   console.error("Failed to start server:", error);
   process.exit(1); // Exit the process if unable to connect to MongoDB
 });
-
