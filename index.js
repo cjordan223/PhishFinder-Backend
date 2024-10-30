@@ -249,6 +249,117 @@ app.post('/api/ai-analyze', async (req, res) => {
   }
 });
 
+// START of logic to handle dashbaord display - build here
+
+app.get('/api/metrics/:timeRange', async (req, res) => {
+  try {
+    const { timeRange } = req.params;
+    const db = await connectDB();
+    const emailsCollection = db.collection('emails');
+
+    // Calculate date range
+    const endDate = new Date();
+    const startDate = new Date();
+    switch (timeRange) {
+      case '7d':
+        startDate.setDate(endDate.getDate() - 7);
+        break;
+      case '30d':
+        startDate.setDate(endDate.getDate() - 30);
+        break;
+      case '90d':
+        startDate.setDate(endDate.getDate() - 90);
+        break;
+      default:
+        startDate.setDate(endDate.getDate() - 7);
+    }
+
+    // Get current period metrics
+    const currentPeriodMetrics = await emailsCollection.aggregate([
+      {
+        $match: {
+          timestamp: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalEmails: { $sum: 1 },
+          flaggedEmails: {
+            $sum: { $cond: [{ $eq: ["$safebrowsingFlag", "yes"] }, 1, 0] }
+          },
+          suspiciousUrls: { $sum: { $size: "$extractedUrls" } }
+        }
+      }
+    ]).toArray();
+
+    // Get previous period metrics for comparison
+    const previousStartDate = new Date(startDate);
+    previousStartDate.setDate(previousStartDate.getDate() - timeRange);
+    
+    const previousPeriodMetrics = await emailsCollection.aggregate([
+      {
+        $match: {
+          timestamp: { $gte: previousStartDate, $lt: startDate }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalEmails: { $sum: 1 },
+          suspiciousUrls: { $sum: { $size: "$extractedUrls" } }
+        }
+      }
+    ]).toArray();
+
+    // Get daily statistics for the chart
+    const dailyStats = await emailsCollection.aggregate([
+      {
+        $match: {
+          timestamp: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$timestamp" } },
+          totalEmails: { $sum: 1 },
+          flaggedEmails: {
+            $sum: { $cond: [{ $eq: ["$safebrowsingFlag", "yes"] }, 1, 0] }
+          }
+        }
+      },
+      {
+        $sort: { "_id": 1 }
+      },
+      {
+        $project: {
+          date: "$_id",
+          totalEmails: 1,
+          flaggedEmails: 1,
+          _id: 0
+        }
+      }
+    ]).toArray();
+
+    // Calculate average risk score  
+    const averageRiskScore = 85; // Placeholder 
+
+    res.json({
+      totalEmails: currentPeriodMetrics[0]?.totalEmails || 0,
+      previousTotalEmails: previousPeriodMetrics[0]?.totalEmails || 0,
+      flaggedEmails: currentPeriodMetrics[0]?.flaggedEmails || 0,
+      averageRiskScore,
+      suspiciousUrls: currentPeriodMetrics[0]?.suspiciousUrls || 0,
+      previousSuspiciousUrls: previousPeriodMetrics[0]?.suspiciousUrls || 0,
+      dailyStats
+    });
+
+  } catch (error) {
+    console.error('Error fetching metrics:', error);
+    res.status(500).json({ error: 'Error fetching metrics' });
+  }
+});
+
 // Connect to MongoDB before starting the server
 connectDB().then(() => {
   app.listen(PORT, () => {
