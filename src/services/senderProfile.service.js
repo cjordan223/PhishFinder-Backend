@@ -1,4 +1,5 @@
 import { connectDB } from '../config/db.js';
+import { extractCommonWords, linkAnalysis } from '../utils/emailAnalysisUtils.js'; // Assuming these functions are in emailAnalysisUtils.js
 
 // Function to save or update sender profile in the database
 export async function saveOrUpdateSenderProfile(emailData) {
@@ -21,6 +22,11 @@ export async function saveOrUpdateSenderProfile(emailData) {
     analyzedWords,
   };
 
+  const linkRisksCount = {
+    ipAddressLinks: linkRisks.filter(r => r.includes('IP address')).length,
+    textUrlMismatch: linkRisks.filter(r => r.includes('Mismatched')).length,
+  };
+
   if (profile) {
     // Update existing profile
     await db.collection('sender_profiles').updateOne(
@@ -28,10 +34,7 @@ export async function saveOrUpdateSenderProfile(emailData) {
       {
         $push: { emails: emailEntry },
         $addToSet: { commonWords: { $each: analyzedWords } },
-        $inc: {
-          "linkRisksCount.ipAddressLinks": linkRisks.filter(r => r.includes('IP address')).length,
-          "linkRisksCount.textUrlMismatch": linkRisks.filter(r => r.includes('Mismatched')).length,
-        }
+        $inc: linkRisksCount,
       }
     );
   } else {
@@ -41,10 +44,7 @@ export async function saveOrUpdateSenderProfile(emailData) {
       domain,
       emails: [emailEntry],
       commonWords: analyzedWords,
-      linkRisksCount: {
-        ipAddressLinks: linkRisks.filter(r => r.includes('IP address')).length,
-        textUrlMismatch: linkRisks.filter(r => r.includes('Mismatched')).length,
-      }
+      linkRisksCount,
     });
   }
 }
