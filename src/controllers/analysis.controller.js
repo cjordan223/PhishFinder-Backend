@@ -1,10 +1,7 @@
 import { saveEmailAnalysis } from '../config/db.js';
 import { extractUrlsFromHtml, extractUrlsFromText, checkUrlsWithSafeBrowsing } from '../utils/urlUtils.js';
 import { getEmailAuthenticationDetails } from '../services/dns.service.js';
-import { analyzeSuspiciousPatterns, checkUrlMismatches} from '../services/analysis.service.js';
-
-
-/// controllers/analysis.controller.js
+import { analyzeSuspiciousPatterns, checkUrlMismatches } from '../services/analysis.service.js';
 
 export const analyzeEmail = async (req, res) => {
     const { 
@@ -19,7 +16,6 @@ export const analyzeEmail = async (req, res) => {
         historyId,
         internalDate,
         sizeEstimate,
-        security,
         rawPayload
     } = req.body;
 
