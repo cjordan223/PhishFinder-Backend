@@ -1,4 +1,7 @@
 // src/controllers/dns.controller.js
+
+//this controller handles the fetching of the email security info from the DNS records
+
 import { getEmailAuthenticationDetails } from '../services/dns.service.js';
 
 export const getDNSRecords = async (req, res) => {

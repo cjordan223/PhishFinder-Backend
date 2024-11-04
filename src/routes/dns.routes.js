@@ -1,4 +1,6 @@
 // src/routes/dns.routes.js
+
+// defines the routes for the DNS records
 import express from 'express';
 import { getDNSRecords } from '../controllers/dns.controller.js';
 

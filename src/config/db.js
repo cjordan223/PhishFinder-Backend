@@ -11,7 +11,7 @@ let db;
 export async function connectDB() {
   try {
     if (!client) {
-      client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+      client = new MongoClient(uri); // Remove deprecated options
       await client.connect();
       db = client.db('phishfinder');
       console.log('Connected to MongoDB');
@@ -46,8 +46,18 @@ export async function saveEmailAnalysis(emailData) {
       return existingEmail._id; // Return the existing document's _id
     }
 
+    // Ensure sender object has whoisData initialized as null
+    const emailDataWithNull = {
+      ...emailData,
+      sender: {
+        ...emailData.sender,
+        whoisData: null  // Initialize as null
+      },
+      whoisLastUpdated: null  // Initialize as null
+    };
+
     // If it doesn't exist, insert the new email data
-    const result = await emailsCollection.insertOne(emailData);
+    const result = await emailsCollection.insertOne(emailDataWithNull);
     console.log('Email analysis saved:', result.insertedId);
     return result.insertedId;
 
@@ -56,3 +66,14 @@ export async function saveEmailAnalysis(emailData) {
     throw error;
   }
 }
+
+// Ensure the MongoDB connection is closed when the process exits
+process.on('SIGINT', async () => {
+  await disconnectDB();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  await disconnectDB();
+  process.exit(0);
+});

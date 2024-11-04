@@ -1,6 +1,8 @@
 // src/utils/urlUtils.js
 import fetch from 'node-fetch';
 
+//helper functions to extract the urls from the email content
+
 export function extractUrlsFromHtml(htmlContent) {
   const hrefRegex = /href=["'](https?:\/\/[^"']+)["']/g;
   const hrefMatches = [...htmlContent.matchAll(hrefRegex)].map(match => match[1]);
@@ -68,6 +70,7 @@ export async function checkUrlsWithSafeBrowsing(urls, safeBrowsingUrl) {
       clientVersion: "1.0",
     },
     threatInfo: {
+      // here we define the types of threats we want to check for using the safe browsing api fields
       threatTypes: ["MALWARE", "SOCIAL_ENGINEERING", "UNWANTED_SOFTWARE", "POTENTIALLY_HARMFUL_APPLICATION"],
       platformTypes: ["ANY_PLATFORM"],
       threatEntryTypes: ["URL"],

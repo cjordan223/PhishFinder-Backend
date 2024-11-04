@@ -1,5 +1,7 @@
 import { connectDB } from '../config/db.js';
 
+//helper functions to fetch the metrics data
+
 export async function getMetricsData(timeRange) {
   try {
     const db = await connectDB();
