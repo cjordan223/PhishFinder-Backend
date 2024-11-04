@@ -1,4 +1,7 @@
 // src/services/dns-service.js
+
+//helper functions to fetch the email security info from the DNS records
+
 import dns from 'dns';
 
 function getSPFRecord(domain) {

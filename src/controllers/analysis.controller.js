@@ -1,93 +1,131 @@
-
-// src/controllers/analysis.controller.js
 import { saveEmailAnalysis } from '../config/db.js';
 import { extractUrlsFromHtml, extractUrlsFromText, checkUrlsWithSafeBrowsing } from '../utils/urlUtils.js';
+import { getEmailAuthenticationDetails } from '../services/dns.service.js';
+import { analyzeSuspiciousPatterns, checkUrlMismatches } from '../services/analysis.service.js';
 
-export const saveAnalysis = async (req, res) => {
-  const { id, sender, subject, body, extractedUrls, timestamp, safebrowsingFlag } = req.body;
+export const analyzeEmail = async (req, res) => {
+    const { 
+        id, 
+        sender, 
+        subject, 
+        body, 
+        timestamp,
+        headers,
+        parts,
+        labels,
+        historyId,
+        internalDate,
+        sizeEstimate,
+        rawPayload
+    } = req.body;
 
-  const emailData = {
-    id,
-    sender,
-    subject,
-    body,
-    extractedUrls,
-    timestamp: new Date(timestamp),
-    safebrowsingFlag,
-  };
+    console.log('Analyzing email:', { id, sender, subject });
 
-  try {
-    const resultId = await saveEmailAnalysis(emailData);
-    res.json({ success: true, id: resultId });
-  } catch (error) {
-    console.error('Error saving email analysis:', error);
-    res.status(500).json({ success: false, error: 'Error saving email analysis.' });
-  }
-};
+    try {
+        if (typeof body !== 'string') {
+            throw new Error('Invalid input: email body must be a string');
+        }
 
-export async function analyzeContent(req, res) {
-  const { text } = req.body;
-  const urls = extractUrlsFromText(text);
-  const safeBrowsingApiKey = process.env.SAFE_BROWSING_API_KEY;
+        // 1. Extract URLs from both HTML and text content
+        const htmlUrls = extractUrlsFromHtml(body);
+        const textUrls = extractUrlsFromText(body);
+        const allUrls = [...new Set([...htmlUrls, ...textUrls])];
+        console.log('Extracted URLs:', allUrls);
 
-  // Construct the Safe Browsing API URL
-  const safeBrowsingUrl = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${safeBrowsingApiKey}`;
+        // 2. SafeBrowsing API setup and check
+        const safeBrowsingApiKey = process.env.SAFE_BROWSING_API_KEY;
+        if (!safeBrowsingApiKey) {
+            throw new Error('SAFE_BROWSING_API_KEY is not configured');
+        }
+        
+        const safeBrowsingUrl = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${safeBrowsingApiKey}`;
+        const flaggedUrls = await checkUrlsWithSafeBrowsing(allUrls, safeBrowsingUrl);
+        console.log('Flagged URLs:', flaggedUrls);
 
-  // Debugging: Log the constructed URL
-  console.log('Constructed SAFE_BROWSING_API_URL:', safeBrowsingUrl);
+        // 3. Check for suspicious patterns
+        const suspiciousPatterns = analyzeSuspiciousPatterns(body, subject);
+        console.log('Suspicious patterns:', suspiciousPatterns);
 
-  if (!safeBrowsingApiKey) {
-    console.error('SAFE_BROWSING_API_KEY is not defined');
-    return res.status(500).json({ error: 'Server configuration error' });
-  }
+        // 4. Check for URL/link name mismatches
+        const urlMismatches = checkUrlMismatches(body);
+        console.log('URL mismatches:', urlMismatches);
 
-  try {
-    const flaggedUrls = await checkUrlsWithSafeBrowsing(urls, safeBrowsingUrl);
-    res.json({ flaggedUrls });
-  } catch (error) {
-    console.error('Error analyzing content:', error);
-    res.status(500).json({ error: 'Error analyzing content' });
-  }
-}
+        // 5. DNS authentication checks
+        let dnsRecords = {
+            spf: null,
+            dkim: null,
+            dmarc: null,
+            summary: 'DNS checks not performed'
+        };
 
-export const analyzeAIContent = async (req, res) => {
-  let { text } = req.body;
-  let wordsArray = text.trim().split(/\s+/);
-  const wordCount = wordsArray.length;
+        if (sender?.domain) {
+            dnsRecords = await getEmailAuthenticationDetails(sender.domain);
+            console.log('DNS records:', dnsRecords);
+        }
 
-  // Debugging: Log the incoming request and API token
-  console.log('Received text for AI analysis:', text);
-  console.log('Using API_TOKEN:', process.env.API_TOKEN);
+        // 6. Compile analysis results
+        const analysisResult = {
+            security: {
+                authentication: {
+                    spf: dnsRecords.spf,
+                    dkim: dnsRecords.dkim,
+                    dmarc: dnsRecords.dmarc,
+                    summary: dnsRecords.summary
+                },
+                analysis: {
+                    isFlagged: flaggedUrls.length > 0 || suspiciousPatterns.length > 0 || urlMismatches.length > 0,
+                    suspiciousKeywords: suspiciousPatterns,
+                    linkRisks: allUrls.map(url => ({
+                        url,
+                        isSuspicious: flaggedUrls.some(f => f.url === url),
+                        threatType: flaggedUrls.find(f => f.url === url)?.threatType || null,
+                        mismatch: urlMismatches.find(m => m.url === url)
+                    })),
+                    safeBrowsingResult: flaggedUrls
+                }
+            }
+        };
 
-  if (wordCount > 298) {
-    wordsArray = wordsArray.slice(0, 298);
-    text = wordsArray.join(' ');
-  }
+        // 7. Save to database
+        const emailData = {
+            id,
+            sender,
+            subject,
+            body,
+            extractedUrls: allUrls,
+            timestamp: new Date(timestamp),
+            safebrowsingFlag: flaggedUrls.length > 0,
+            spf: dnsRecords.spf,
+            dmarc: dnsRecords.dmarc,
+            dkim: dnsRecords.dkim,
+            metadata: {
+                date: timestamp,
+                labels: labels || [],
+                headers: headers || [],
+                parts: parts || [],
+                historyId,
+                internalDate,
+                sizeEstimate,
+                rawPayload
+            }
+        };
 
-  if (wordsArray.length < 10) {
-    return res.status(400).json({ error: 'Text must be between 10 and 298 words.' });
-  }
+        const resultId = await saveEmailAnalysis(emailData);
+        console.log('Saved to database with ID:', resultId);
 
-  try {
-    const response = await fetch('https://www.freedetector.ai/api/content_detector/', {
-      method: 'POST',
-      headers: {
-        'Authorization': process.env.API_TOKEN,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ text }),
-    });
-    
-    const result = await response.json();
+        // 8. Send response
+        res.json({
+            success: true,
+            id: resultId,
+            ...analysisResult
+        });
 
-    if (result.success) {
-      res.json({ score: result.score });
-    } else {
-      console.error('API returned error:', result);
-      res.status(500).json({ error: result.message || 'API error occurred.' });
+    } catch (error) {
+        console.error('Error analyzing email:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error analyzing email',
+            details: error.message 
+        });
     }
-  } catch (error) {
-    console.error('Error making request to AI Detector API:', error);
-    res.status(500).json({ error: 'Error analyzing content.' });
-  }
 };
