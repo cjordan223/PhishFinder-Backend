@@ -1,49 +1,46 @@
 // src/controllers/whois.controller.js
 import fetch from 'node-fetch';
 import { connectDB } from '../config/db.js';
+import { extractRootDomain } from '../utils/domainUtils.js';
 
 export async function getWhoisData(req, res) {
   const { domain, emailId } = req.params;
   const method = req.method;
-  console.log(`[${new Date().toISOString()}] ${method} WHOIS request for domain: ${domain}${emailId ? `, emailId: ${emailId}` : ''}`);
-
-  const whoisApiUrl = `http://localhost:8081/${domain}`;
+  
+  // Extract root domain for WHOIS lookup
+  const rootDomain = extractRootDomain(domain);
+  
+  console.log(`[${new Date().toISOString()}] Incoming ${method} request to /whois/${domain}${emailId ? `/${emailId}` : ''}`);
+  console.log(`[${new Date().toISOString()}] Using root domain for WHOIS lookup: ${rootDomain}`);
 
   try {
-    const whoisData = await fetchWhoisData(whoisApiUrl);
-    
+    // Step 1: Fetch WHOIS data using root domain
+    const whoisData = await fetchWhoisData(`http://localhost:8081/${rootDomain}`);
+    console.log(`[${new Date().toISOString()}] Successfully fetched WHOIS data for ${rootDomain}`);
+    console.log(`[${new Date().toISOString()}] WHOIS data:`, whoisData);
+
+    // Step 2: Update database if emailId is provided
     if (emailId) {
-      // Update the existing email record with WHOIS data
-      const db = await connectDB();
-      const emailsCollection = db.collection('emails');
-      
-      const updateResult = await emailsCollection.updateOne(
-        { id: emailId },
-        { 
-          $set: { 
-            'sender.whoisData': whoisData,
-            'whoisLastUpdated': new Date()
-          }
-        }
-      );
-      
-      if (updateResult.modifiedCount > 0) {
-        console.log(`[${new Date().toISOString()}] Updated WHOIS data for emailId: ${emailId}`);
-      } else {
-        console.log(`[${new Date().toISOString()}] No email found for emailId: ${emailId}`);
-      }
+      await updateDatabaseWithWhois(emailId, whoisData);
+    } else {
+      console.log(`[${new Date().toISOString()}] No emailId provided - skipping database update`);
     }
 
-    console.log(`[${new Date().toISOString()}] Successfully fetched WHOIS data for ${domain}`);
-    console.log(`[${new Date().toISOString()}] WHOIS data:`, whoisData);
+    // Step 3: Return response
     res.json({
       success: true,
       emailId,
+      originalDomain: domain,
+      rootDomain,
       whoisData
     });
   } catch (error) {
     console.error(`[${new Date().toISOString()}] Error processing WHOIS data:`, error);
-    res.status(500).json({ error: 'Error processing WHOIS data' });
+    res.status(500).json({ 
+      error: 'Error processing WHOIS data',
+      originalDomain: domain,
+      rootDomain
+    });
   }
 }
 
@@ -75,7 +72,7 @@ export async function postWhoisData(req, res) {
   }
 }
 
-// Helper functions
+// Helper function to fetch WHOIS data
 async function fetchWhoisData(url) {
   const response = await fetch(url);
   if (!response.ok) {
@@ -84,17 +81,26 @@ async function fetchWhoisData(url) {
   return response.json();
 }
 
-async function updateEmailRecord(emailId, whoisData) {
+// Helper function to update database with WHOIS data
+async function updateDatabaseWithWhois(emailId, whoisData) {
   const db = await connectDB();
   const emailsCollection = db.collection('emails');
   
-  await emailsCollection.updateOne(
+  const updateResult = await emailsCollection.updateOne(
     { id: emailId },
     { 
       $set: { 
-        whoisData,
-        whoisLastUpdated: new Date()
+        'sender.whoisData': whoisData,
+        'whoisLastUpdated': new Date()
       }
     }
   );
+  
+  if (updateResult.modifiedCount > 0) {
+    console.log(`[${new Date().toISOString()}] Updated WHOIS data for emailId: ${emailId}`);
+  } else {
+    console.log(`[${new Date().toISOString()}] No email found or no changes made for emailId: ${emailId}`);
+  }
+  
+  return updateResult;
 }
