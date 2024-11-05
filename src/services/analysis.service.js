@@ -155,3 +155,50 @@ export const analyzeAIContent = async (req, res) => {
     res.status(500).json({ error: 'Error analyzing content.' });
   }
 };
+
+
+// Helper functions to extract/determine various properties
+export function extractSpfStatus(spf) {
+  if (!spf) return 'missing';
+  if (spf.includes('~all')) return 'softfail';
+  if (spf.includes('-all')) return 'hardfail';
+  if (spf.includes('+all')) return 'pass';
+  return 'neutral';
+}
+
+export function extractDmarcPolicy(dmarc) {
+  if (!dmarc) return 'none';
+  if (dmarc.includes('p=reject')) return 'reject';
+  if (dmarc.includes('p=quarantine')) return 'quarantine';
+  if (dmarc.includes('p=none')) return 'none';
+  return 'unknown';
+}
+
+export function determineCategory(labels, subject, body) {
+  // Implement logic to categorize emails
+  if (labels.includes('CATEGORY_UPDATES')) return 'update';
+  if (labels.includes('CATEGORY_PROMOTIONS')) return 'promotion';
+  if (labels.includes('CATEGORY_SOCIAL')) return 'social';
+  // Add more categories based on content analysis
+  return 'general';
+}
+
+export function extractCipherInfo(headers) {
+  const received = headers.find(h => h.name === 'Received' && h.value.includes('cipher='));
+  if (!received) return null;
+  const match = received.value.match(/cipher=([^\s]+)/);
+  return match ? match[1] : null;
+}
+
+export function determineIfResponseRequired(body) {
+  const responseIndicators = [
+      'please respond',
+      'please reply',
+      'let me know',
+      'confirm receipt',
+      'awaiting your response'
+  ];
+  return responseIndicators.some(indicator => 
+      body.toLowerCase().includes(indicator.toLowerCase())
+  );
+}
