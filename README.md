@@ -12,7 +12,9 @@ git clone <dir>
 cd <dir>
 npm install
 docker compose up -d
-(let the container start up.....)
+```
+Let the container start up for WHOIS server, then run
+```
 node index.js
 ```
 ## To Do's
