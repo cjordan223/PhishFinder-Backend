@@ -5,6 +5,20 @@ Handles API and sensitive data. Email objects are sent to a cloud DB for storage
 [Front End Code](https://github.com/cjordan223/PhishFinder/)
 
 
+Update with .env or will not work, then run:
+
+```
+git clone <dir>
+cd <dir>
+npm install
+docker compose up -d
+(let the container start up.....)
+node index.js
+
+
+
+
+```
 ## To Do's
 
 ## 1. Email Metadata Collection
@@ -23,19 +37,5 @@ Handles API and sensitive data. Email objects are sent to a cloud DB for storage
     * Keywords: Extract common keywords in the subject or body, especially if they match known phishing keywords.
     * Attachments and Links: Track if certain senders commonly send attachments or links, which could be useful for detecting phishing behavior.
 
-## 2. Database Schema for Email Profiling
 
-
-| Field                | Type         | Description                                       |
-|----------------------|--------------|---------------------------------------------------|
-| `id`                 | UUID         | Unique identifier for each sender                 |
-| `email`              | String       | Sender email address (e.g., mom@email.com)        |
-| `domain`             | String       | Sender domain (e.g., email.com)                   |
-| `name`               | String       | Sender name if available                          |
-| `email_count`        | Integer      | Total number of emails received from this sender  |
-| `last_seen`          | Timestamp    | Last email received from this sender              |
-| `keywords`           | JSON/Array   | List of commonly used keywords in the sender’s emails |
-| `attachments_count`  | Integer      | Number of times emails contained attachments      |
-| `links_count`        | Integer      | Number of times emails contained links            |
-| `authentication_results` | JSON/Object | DMARC, SPF, DKIM results                     |
 
