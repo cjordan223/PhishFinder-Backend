@@ -1,7 +1,7 @@
 // src/controllers/whois.controller.js
 import fetch from 'node-fetch';
 import { connectDB } from '../config/db.js';
-import { extractRootDomain } from '../utils/domainUtils.js';
+import { extractRootDomain } from '../services/dns.service.js';
 
 export async function getWhoisData(req, res) {
   const { domain, emailId } = req.params;
