@@ -14,10 +14,6 @@ npm install
 docker compose up -d
 (let the container start up.....)
 node index.js
-
-
-
-
 ```
 ## To Do's
 
