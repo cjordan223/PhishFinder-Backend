@@ -1,5 +1,6 @@
 import sanitizeHtml from 'sanitize-html';
 import * as cheerio from 'cheerio';
+import logger from '../config/logger.js';
 
 export const cleanEmailBody = (body) => {
     try {
@@ -21,7 +22,7 @@ export const cleanEmailBody = (body) => {
 
         return cleaned;
     } catch (err) {
-        console.error('Error cleaning email body:', err);
+        logger.error('Error cleaning email body:', err);
         return body;
     }
 };
@@ -32,7 +33,7 @@ export const extractReadableText = (html) => {
         $('style, script, link, meta').remove();
         return $('body').text().replace(/\s+/g, ' ').trim();
     } catch (err) {
-        console.error('Error extracting readable text:', err);
+        logger.error('Error extracting readable text:', err);
         return html;
     }
 };
@@ -45,4 +46,4 @@ export const getTextMetrics = (original, cleaned, readable) => {
         wordCount: readable.split(/\s+/).length,
         sentences: readable.split(/[.!?]+/g).length
     };
-}; 
+};

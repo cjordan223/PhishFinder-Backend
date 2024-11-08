@@ -1,6 +1,7 @@
 import { connectDB } from '../config/db.js';
+import logger from '../config/logger.js';
 
-//helper functions to fetch the metrics data
+// Helper functions to fetch the metrics data
 
 export async function getMetricsData(timeRange) {
   try {
@@ -23,7 +24,7 @@ export async function getMetricsData(timeRange) {
         startDate.setDate(endDate.getDate() - 7);
     }
 
-    console.log(`Querying emails from ${startDate.toISOString()} to ${endDate.toISOString()}`);
+    logger.info(`Querying emails from ${startDate.toISOString()} to ${endDate.toISOString()}`);
 
     const metrics = await emailsCollection.aggregate([
       {
@@ -42,13 +43,13 @@ export async function getMetricsData(timeRange) {
       },
     ]).toArray();
 
-    console.log('Metrics:', metrics);
+    logger.info('Metrics:', metrics);
 
     return metrics[0] || {
       totalEmails: 0,
     };
   } catch (error) {
-    console.error('Error fetching metrics:', error);
+    logger.error('Error fetching metrics:', error);
     throw new Error('Error fetching metrics');
   }
 }

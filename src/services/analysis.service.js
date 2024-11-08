@@ -1,3 +1,4 @@
+import logger from '../config/logger.js';
 
 // Helper function to analyze suspicious patterns
 export function analyzeSuspiciousPatterns(body, subject) {
@@ -66,7 +67,7 @@ export function checkUrlMismatches(body) {
                 });
             }
         } catch (e) {
-            console.warn('Error parsing URL in mismatch check:', e);
+            logger.warn('Error parsing URL in mismatch check:', e);
         }
     }
 
@@ -78,11 +79,11 @@ export async function analyzeContent(req, res) {
   const { text } = req.body;
 
   // Debugging: Log the received text
-  console.log('Received text for analysis:', text);
+  logger.info('Received text for analysis:', text);
 
   // Check if text is a string
   if (typeof text !== 'string') {
-    console.error('Expected a string for text, but received:', typeof text);
+    logger.error('Expected a string for text, but received:', typeof text);
     return res.status(400).json({ error: 'Invalid input: text must be a string' });
   }
 
@@ -93,10 +94,10 @@ export async function analyzeContent(req, res) {
   const safeBrowsingUrl = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${safeBrowsingApiKey}`;
 
   // Debugging: Log the constructed URL
-  console.log('Constructed SAFE_BROWSING_API_URL:', safeBrowsingUrl);
+  logger.info('Constructed SAFE_BROWSING_API_URL:', safeBrowsingUrl);
 
   if (!safeBrowsingApiKey) {
-    console.error('SAFE_BROWSING_API_KEY is not defined');
+    logger.error('SAFE_BROWSING_API_KEY is not defined');
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
@@ -104,24 +105,21 @@ export async function analyzeContent(req, res) {
     const flaggedUrls = await checkUrlsWithSafeBrowsing(urls, safeBrowsingUrl);
     res.json({ flaggedUrls });
   } catch (error) {
-    console.error('Error analyzing content:', error);
+    logger.error('Error analyzing content:', error);
     res.status(500).json({ error: 'Error analyzing content' });
   }
 }
 
 // Endpoint to analyze content using AI
 // currently unused
-
-
-
 export const analyzeAIContent = async (req, res) => {
   let { text } = req.body;
   let wordsArray = text.trim().split(/\s+/);
   const wordCount = wordsArray.length;
 
   // Debugging: Log the incoming request and API token
-  console.log('Received text for AI analysis:', text);
-  console.log('Using API_TOKEN:', process.env.API_TOKEN);
+  logger.info('Received text for AI analysis:', text);
+  logger.info('Using API_TOKEN:', process.env.API_TOKEN);
   
   if (wordCount > 298) {
     wordsArray = wordsArray.slice(0, 298);
@@ -147,15 +145,14 @@ export const analyzeAIContent = async (req, res) => {
     if (result.success) {
       res.json({ score: result.score });
     } else {
-      console.error('API returned error:', result);
+      logger.error('API returned error:', result);
       res.status(500).json({ error: result.message || 'API error occurred.' });
     }
   } catch (error) {
-    console.error('Error making request to AI Detector API:', error);
+    logger.error('Error making request to AI Detector API:', error);
     res.status(500).json({ error: 'Error analyzing content.' });
   }
 };
-
 
 // Helper functions to extract/determine various properties
 export function extractSpfStatus(spf) {

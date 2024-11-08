@@ -1,3 +1,5 @@
+import logger from '../config/logger.js';
+
 /**
  * Extracts organization name from email domain and content
  * @param {string} domain - Email domain
@@ -58,7 +60,7 @@ function extractOrganization(domain, body) {
         return org.length > 3 ? org : null;
 
     } catch (err) {
-        console.error('Error extracting organization:', err);
+        logger.error('Error extracting organization:', err);
         return null;
     }
 }
@@ -82,4 +84,4 @@ function cleanOrgName(name) {
 }
 
 // Export both functions
-export { extractOrganization, cleanOrgName }; 
+export { extractOrganization, cleanOrgName };

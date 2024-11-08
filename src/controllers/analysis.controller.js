@@ -1,9 +1,10 @@
 import { saveEmailAnalysis } from '../config/db.js';
 import { extractUrlsFromHtml, extractUrlsFromText, checkUrlsWithSafeBrowsing } from '../utils/urlUtils.js';
 import { getEmailAuthenticationDetails } from '../services/dns.service.js';
-import { analyzeSuspiciousPatterns, checkUrlMismatches, extractSpfStatus, extractDmarcPolicy, determineCategory, extractCipherInfo, determineIfResponseRequired} from '../services/analysis.service.js';
+import { analyzeSuspiciousPatterns, checkUrlMismatches, extractSpfStatus, extractDmarcPolicy, determineCategory, extractCipherInfo, determineIfResponseRequired } from '../services/analysis.service.js';
 import { cleanEmailBody, extractReadableText, getTextMetrics } from '../utils/textCleaner.js';
 import { extractOrganization, cleanOrgName } from '../utils/emailParser.js';
+import logger from '../config/logger.js';
 
 export const analyzeEmail = async (req, res) => {
     const { 
@@ -21,7 +22,7 @@ export const analyzeEmail = async (req, res) => {
         rawPayload
     } = req.body;
 
-    console.log('Analyzing email:', { id, sender, subject });
+    logger.info('Analyzing email:', { id, sender, subject });
 
     try {
         if (typeof body !== 'string') {
@@ -32,20 +33,19 @@ export const analyzeEmail = async (req, res) => {
         const cleanedBody = cleanEmailBody(body);
         const readableText = extractReadableText(cleanedBody);
 
-        console.log('Cleaned body:', cleanedBody);
-        console.log('Readable text:', readableText);
-
+        logger.info('Cleaned body:', cleanedBody);
+        logger.info('Readable text:', readableText);
 
         // Add metrics about the cleaning process
         const textMetrics = getTextMetrics(body, cleanedBody, readableText);
         
-        console.log('Text cleaning metrics:', textMetrics);
+        logger.info('Text cleaning metrics:', textMetrics);
 
         // 1. Extract URLs from both HTML and text content
         const htmlUrls = extractUrlsFromHtml(cleanedBody);
         const textUrls = extractUrlsFromText(readableText);
         const allUrls = [...new Set([...htmlUrls, ...textUrls])];
-        console.log('Extracted URLs:', allUrls);
+        logger.info('Extracted URLs:', allUrls);
 
         // 2. SafeBrowsing API setup and check
         const safeBrowsingApiKey = process.env.SAFE_BROWSING_API_KEY;
@@ -55,15 +55,15 @@ export const analyzeEmail = async (req, res) => {
         
         const safeBrowsingUrl = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${safeBrowsingApiKey}`;
         const flaggedUrls = await checkUrlsWithSafeBrowsing(allUrls, safeBrowsingUrl);
-        console.log('Flagged URLs:', flaggedUrls);
+        logger.info('Flagged URLs:', flaggedUrls);
 
         // 3. Check for suspicious patterns
         const suspiciousPatterns = analyzeSuspiciousPatterns(readableText, subject);
-        console.log('Suspicious patterns:', suspiciousPatterns);
+        logger.info('Suspicious patterns:', suspiciousPatterns);
 
         // 4. Check for URL/link name mismatches
         const urlMismatches = checkUrlMismatches(body);
-        console.log('URL mismatches:', urlMismatches);
+        logger.info('URL mismatches:', urlMismatches);
 
         // 5. DNS authentication checks
         let dnsRecords = {
@@ -75,7 +75,7 @@ export const analyzeEmail = async (req, res) => {
 
         if (sender?.domain) {
             dnsRecords = await getEmailAuthenticationDetails(sender.domain);
-            console.log('DNS records:', dnsRecords);
+            logger.info('DNS records:', dnsRecords);
         }
 
         // 6. Compile analysis results
@@ -166,7 +166,7 @@ export const analyzeEmail = async (req, res) => {
         };
 
         const resultId = await saveEmailAnalysis(emailData);
-        console.log('Saved to database with ID:', resultId);
+        logger.info('Saved to database with ID:', resultId);
 
         // 8. Send response
         res.json({
@@ -176,7 +176,7 @@ export const analyzeEmail = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error analyzing email:', error);
+        logger.error('Error analyzing email:', error);
         res.status(500).json({ 
             success: false, 
             error: 'Error analyzing email',
@@ -184,4 +184,3 @@ export const analyzeEmail = async (req, res) => {
         });
     }
 };
-

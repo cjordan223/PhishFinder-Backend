@@ -1,11 +1,11 @@
 // src/services/dns-service.js
 
-//helper functions to fetch the email security info from the DNS records
+// Helper functions to fetch the email security info from the DNS records
 
 import dns from 'dns';
 import psl from 'psl';
+import logger from '../config/logger.js';
 // PSL is a library for parsing and validating domain names, more powerful than hand written regex
-
 
 function getSPFRecord(domain) {
   return new Promise((resolve, reject) => {
@@ -79,7 +79,7 @@ export async function getEmailAuthenticationDetails(domain) {
       summary: `SPF: ${spf !== 'No SPF record found' ? 'Pass' : 'Fail'}, DKIM: ${dkim !== 'No DKIM record found' ? 'Pass' : 'Fail'}, DMARC: ${dmarc !== 'No DMARC record found' ? 'Pass' : 'Fail'}`,
     };
   } catch (error) {
-    console.error('Error fetching email authentication details:', error);
+    logger.error('Error fetching email authentication details:', error);
     return {
       spf: 'Error fetching SPF record',
       dkim: 'Error fetching DKIM record',
@@ -89,41 +89,35 @@ export async function getEmailAuthenticationDetails(domain) {
   }
 }
 
+// General functions to assist with domain parsing
 
-
-
-
-
-  // general functions to assist with domain parsing
-
-  export function extractRootDomain(url) {
-      try {
-          // Remove protocol and get hostname
-          const hostname = url.replace(/^(https?:\/\/)?(www\.)?/, '');
-          
-          // Parse using PSL
-          const parsed = psl.parse(hostname);
-          
-          if (parsed.domain === null) {
-              console.warn(`[DomainUtils] Could not parse domain from: ${url}`);
-              return hostname;
-          }
-          
-          console.log(`[DomainUtils] Extracted ${parsed.domain} from ${url}`);
-          return parsed.domain;
-      } catch (error) {
-          console.error(`[DomainUtils] Error parsing domain from ${url}:`, error);
-          return url;
-      }
+export function extractRootDomain(url) {
+  try {
+    // Remove protocol and get hostname
+    const hostname = url.replace(/^(https?:\/\/)?(www\.)?/, '');
+    
+    // Parse using PSL
+    const parsed = psl.parse(hostname);
+    
+    if (parsed.domain === null) {
+      logger.warn(`[DomainUtils] Could not parse domain from: ${url}`);
+      return hostname;
+    }
+    
+    logger.info(`[DomainUtils] Extracted ${parsed.domain} from ${url}`);
+    return parsed.domain;
+  } catch (error) {
+    logger.error(`[DomainUtils] Error parsing domain from ${url}:`, error);
+    return url;
   }
-  
-  // Optional: Add more domain-related utilities
-  export function isValidDomain(domain) {
-      return psl.isValid(domain);
-  }
-  
-  export function getDomainInfo(url) {
-      const hostname = url.replace(/^(https?:\/\/)?(www\.)?/, '');
-      return psl.parse(hostname);
-  }
-  
+}
+
+// Optional: Add more domain-related utilities
+export function isValidDomain(domain) {
+  return psl.isValid(domain);
+}
+
+export function getDomainInfo(url) {
+  const hostname = url.replace(/^(https?:\/\/)?(www\.)?/, '');
+  return psl.parse(hostname);
+}
