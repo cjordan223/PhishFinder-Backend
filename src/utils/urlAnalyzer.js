@@ -1,6 +1,7 @@
 import URLParse from 'url-parse';
 import { PhishDetector } from 'phish-detector';
 import { LinkChecker } from 'linkinator';
+import logger from '../config/logger.js';
 
 class UrlAnalyzer {
     constructor() {
@@ -45,7 +46,7 @@ class UrlAnalyzer {
             return analysis;
 
         } catch (error) {
-            console.error('URL analysis error:', error);
+            logger.error('URL analysis error:', error);
             return null;
         }
     }
@@ -67,7 +68,7 @@ class UrlAnalyzer {
                 domain: this.extractDomain(parsed.hostname)
             };
         } catch (error) {
-            console.error('URL parsing error:', error);
+            logger.error('URL parsing error:', error);
             return null;
         }
     }
@@ -95,4 +96,4 @@ class UrlAnalyzer {
 }
 
 // Export singleton instance
-export const urlAnalyzer = new UrlAnalyzer(); 
+export const urlAnalyzer = new UrlAnalyzer();

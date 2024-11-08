@@ -1,7 +1,8 @@
 // src/utils/urlUtils.js
 import fetch from 'node-fetch';
+import logger from '../config/logger.js';
 
-//helper functions to extract the urls from the email content
+// Helper functions to extract the URLs from the email content
 
 export function extractUrlsFromHtml(htmlContent) {
   const hrefRegex = /href=["'](https?:\/\/[^"']+)["']/g;
@@ -60,7 +61,7 @@ export function extractUrlsFromText(text) {
       }
     });
 
-  console.log('Extracted URLs from text:', cleanedUrls);
+  logger.info('Extracted URLs from text:', cleanedUrls);
   return cleanedUrls;
 }
 
@@ -91,7 +92,7 @@ export async function checkUrlsWithSafeBrowsing(urls, safeBrowsingUrl) {
     });
 
     if (!response.ok) {
-      console.error("Safe Browsing API error:", response.statusText);
+      logger.error("Safe Browsing API error:", response.statusText);
       return [];
     }
 
@@ -99,7 +100,7 @@ export async function checkUrlsWithSafeBrowsing(urls, safeBrowsingUrl) {
     const flaggedUrls = data.matches ? data.matches.map(match => ({ url: match.threat.url, threatType: match.threatType })) : [];
     return [...new Set(flaggedUrls.map(JSON.stringify))].map(JSON.parse); // Deduplicate flagged URLs
   } catch (error) {
-    console.error("Safe Browsing API error:", error);
+    logger.error("Safe Browsing API error:", error);
     return [];
   }
 }

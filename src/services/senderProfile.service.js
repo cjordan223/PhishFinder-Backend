@@ -1,7 +1,7 @@
 import { connectDB } from '../config/db.js'; // Importing the database connection function
+import logger from '../config/logger.js';
 
-//Don't remove it - it enables:
-
+// Don't remove it - it enables:
 // Tracking sender reputation over time
 // Identifying suspicious pattern changes
 // Historical security metrics
@@ -50,7 +50,7 @@ export async function saveOrUpdateSenderProfile(emailData) {
     }
   };
 
-  console.log('Attempting to save email entry:', JSON.stringify(emailEntry, null, 2)); // Log the email entry being saved
+  logger.info('Attempting to save email entry:', JSON.stringify(emailEntry, null, 2)); // Log the email entry being saved
 
   // Security metrics for the sender profile
   const securityMetrics = {
@@ -80,7 +80,7 @@ export async function saveOrUpdateSenderProfile(emailData) {
       }
     };
     
-    console.log('Update operation:', JSON.stringify(updateOperation, null, 2)); // Log the update operation
+    logger.info('Update operation:', JSON.stringify(updateOperation, null, 2)); // Log the update operation
     
     // Perform the update operation on the database
     await db.collection('sender_profiles').updateOne(
@@ -103,7 +103,7 @@ export async function saveOrUpdateSenderProfile(emailData) {
       }
     };
 
-    console.log('Creating new profile:', JSON.stringify(newProfile, null, 2)); // Log the new profile being created
+    logger.info('Creating new profile:', JSON.stringify(newProfile, null, 2)); // Log the new profile being created
     
     // Insert the new profile into the database
     await db.collection('sender_profiles').insertOne(newProfile);
