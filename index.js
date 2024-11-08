@@ -1,8 +1,7 @@
-// index.js
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { connectDB } from './src/config/db.js';
+import { connectDB, disconnectDB } from './src/config/db.js';
 import analysisRoutes from './src/routes/analysis.routes.js';
 import dnsRoutes from './src/routes/dns.routes.js';
 import metricsRoutes from './src/routes/metrics.routes.js';
@@ -16,7 +15,7 @@ const app = express();
 const PORT = process.env.PORT || 8080; // Set the port for the server
 
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increase payload size limit
 
 // Middleware to log incoming requests
 app.use((req, res, next) => {

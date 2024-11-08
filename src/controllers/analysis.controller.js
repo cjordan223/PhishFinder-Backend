@@ -22,7 +22,7 @@ export const analyzeEmail = async (req, res) => {
         rawPayload
     } = req.body;
 
-    logger.info('Analyzing email:', { id, sender, subject });
+    logger.info(`Analyzing email: ${JSON.stringify({ id, sender, subject })}`);
 
     try {
         if (typeof body !== 'string') {
@@ -33,19 +33,19 @@ export const analyzeEmail = async (req, res) => {
         const cleanedBody = cleanEmailBody(body);
         const readableText = extractReadableText(cleanedBody);
 
-        logger.info('Cleaned body:', cleanedBody);
-        logger.info('Readable text:', readableText);
+        logger.info(`Cleaned body: ${cleanedBody}`);
+        logger.info(`Readable text: ${readableText}`);
 
         // Add metrics about the cleaning process
         const textMetrics = getTextMetrics(body, cleanedBody, readableText);
         
-        logger.info('Text cleaning metrics:', textMetrics);
+        logger.info(`Text cleaning metrics: ${JSON.stringify(textMetrics)}`);
 
         // 1. Extract URLs from both HTML and text content
         const htmlUrls = extractUrlsFromHtml(cleanedBody);
         const textUrls = extractUrlsFromText(readableText);
         const allUrls = [...new Set([...htmlUrls, ...textUrls])];
-        logger.info('Extracted URLs:', allUrls);
+        logger.info(`Extracted URLs: ${JSON.stringify(allUrls)}`);
 
         // 2. SafeBrowsing API setup and check
         const safeBrowsingApiKey = process.env.SAFE_BROWSING_API_KEY;
@@ -55,15 +55,15 @@ export const analyzeEmail = async (req, res) => {
         
         const safeBrowsingUrl = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${safeBrowsingApiKey}`;
         const flaggedUrls = await checkUrlsWithSafeBrowsing(allUrls, safeBrowsingUrl);
-        logger.info('Flagged URLs:', flaggedUrls);
+        logger.info(`Flagged URLs: ${JSON.stringify(flaggedUrls)}`);
 
         // 3. Check for suspicious patterns
         const suspiciousPatterns = analyzeSuspiciousPatterns(readableText, subject);
-        logger.info('Suspicious patterns:', suspiciousPatterns);
+        logger.info(`Suspicious patterns: ${JSON.stringify(suspiciousPatterns)}`);
 
         // 4. Check for URL/link name mismatches
         const urlMismatches = checkUrlMismatches(body);
-        logger.info('URL mismatches:', urlMismatches);
+        logger.info(`URL mismatches: ${JSON.stringify(urlMismatches)}`);
 
         // 5. DNS authentication checks
         let dnsRecords = {
@@ -75,7 +75,7 @@ export const analyzeEmail = async (req, res) => {
 
         if (sender?.domain) {
             dnsRecords = await getEmailAuthenticationDetails(sender.domain);
-            logger.info('DNS records:', dnsRecords);
+            logger.info(`DNS records: ${JSON.stringify(dnsRecords)}`);
         }
 
         // 6. Compile analysis results
@@ -166,7 +166,7 @@ export const analyzeEmail = async (req, res) => {
         };
 
         const resultId = await saveEmailAnalysis(emailData);
-        logger.info('Saved to database with ID:', resultId);
+        logger.info(`Saved to database with ID: ${resultId}`);
 
         // 8. Send response
         res.json({
@@ -176,7 +176,7 @@ export const analyzeEmail = async (req, res) => {
         });
 
     } catch (error) {
-        logger.error('Error analyzing email:', error);
+        logger.error(`Error analyzing email: ${error.message}`);
         res.status(500).json({ 
             success: false, 
             error: 'Error analyzing email',
