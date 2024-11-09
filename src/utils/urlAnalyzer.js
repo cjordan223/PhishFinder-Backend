@@ -1,7 +1,7 @@
-import URLParse from 'url-parse';
 import { PhishDetector } from 'phish-detector';
 import { LinkChecker } from 'linkinator';
 import logger from '../config/logger.js';
+import UrlUtils from './urlUtils.js';
 
 class UrlAnalyzer {
     constructor() {
@@ -12,14 +12,15 @@ class UrlAnalyzer {
     async analyzeUrl(displayText, href) {
         try {
             const analysis = {
-                displayUrl: this.parseUrl(displayText),
-                actualUrl: this.parseUrl(href),
+                displayUrl: UrlUtils.parseUrl(displayText),
+                actualUrl: UrlUtils.parseUrl(href),
                 suspicious: false,
                 reasons: [],
                 redirects: [],
                 security: {
                     ssl: false,
                     certificate: null,
+                    safeBrowsing: null
                 }
             };
 
@@ -34,6 +35,14 @@ class UrlAnalyzer {
             if (phishScore > 0.7) {
                 analysis.suspicious = true;
                 analysis.reasons.push('phishing_indicators');
+            }
+
+            // Check with Safe Browsing API
+            const safeBrowsingResults = await UrlUtils.checkUrlsWithSafeBrowsing([href]);
+            if (safeBrowsingResults.length > 0) {
+                analysis.suspicious = true;
+                analysis.reasons.push('safe_browsing_threat');
+                analysis.security.safeBrowsing = safeBrowsingResults[0];
             }
 
             // Check for redirects
@@ -51,49 +60,22 @@ class UrlAnalyzer {
         }
     }
 
-    parseUrl(urlString) {
-        try {
-            // Handle cases where protocol is missing
-            if (!urlString.startsWith('http')) {
-                urlString = 'https://' + urlString;
-            }
-            
-            const parsed = new URLParse(urlString);
-            return {
-                full: parsed.href,
-                protocol: parsed.protocol,
-                hostname: parsed.hostname,
-                pathname: parsed.pathname,
-                query: parsed.query,
-                domain: this.extractDomain(parsed.hostname)
-            };
-        } catch (error) {
-            logger.error('URL parsing error:', error);
-            return null;
-        }
-    }
-
     isDomainMismatch(displayUrl, actualUrl) {
         if (!displayUrl || !actualUrl) return false;
         return displayUrl.domain !== actualUrl.domain;
     }
 
-    extractDomain(hostname) {
-        // Remove subdomains, keep main domain + TLD
-        const parts = hostname.split('.');
-        if (parts.length > 2) {
-            return parts.slice(-2).join('.');
-        }
-        return hostname;
-    }
-
     async checkRedirects(url) {
-        const results = await this.linkChecker.check(url);
-        return results.links
-            .filter(link => link.status === 301 || link.status === 302)
-            .map(link => link.url);
+        try {
+            const results = await this.linkChecker.check(url);
+            return results.links
+                .filter(link => link.status === 301 || link.status === 302)
+                .map(link => link.url);
+        } catch (error) {
+            logger.error('Error checking redirects:', error);
+            return [];
+        }
     }
 }
 
-// Export singleton instance
 export const urlAnalyzer = new UrlAnalyzer();

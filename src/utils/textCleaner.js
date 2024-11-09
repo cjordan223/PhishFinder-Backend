@@ -4,7 +4,7 @@ import logger from '../config/logger.js';
 
 export const cleanEmailBody = (body) => {
     try {
-        // First pass: Remove HTML
+        // First pass: Remove HTML and get readable text
         let cleaned = sanitizeHtml(body, {
             allowedTags: [],
             allowedAttributes: {},
@@ -30,7 +30,7 @@ export const cleanEmailBody = (body) => {
 export const extractReadableText = (html) => {
     try {
         const $ = cheerio.load(html);
-        $('style, script, link, meta').remove();
+        $('style, script, link, meta, img').remove();
         return $('body').text().replace(/\s+/g, ' ').trim();
     } catch (err) {
         logger.error('Error extracting readable text:', err);
@@ -38,12 +38,11 @@ export const extractReadableText = (html) => {
     }
 };
 
-export const getTextMetrics = (original, cleaned, readable) => {
+export const getTextMetrics = (original, cleaned) => {
     return {
         originalLength: original.length,
         cleanedLength: cleaned.length,
-        readableLength: readable.length,
-        wordCount: readable.split(/\s+/).length,
-        sentences: readable.split(/[.!?]+/g).length
+        wordCount: cleaned.split(/\s+/).length,
+        sentences: cleaned.split(/[.!?]+/g).length
     };
 };

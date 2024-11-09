@@ -3,10 +3,10 @@
 // Helper functions to fetch the email security info from the DNS records
 
 import dns from 'dns';
-import psl from 'psl';
 import logger from '../config/logger.js';
 import { cacheService } from './cache.service.js';
-// PSL is a library for parsing and validating domain names, more powerful than hand written regex
+import UrlUtils from '../utils/urlUtils.js';
+
 
 async function getSPFRecord(domain) {
   const cacheKey = `spf:${domain}`;
@@ -126,35 +126,15 @@ export async function getEmailAuthenticationDetails(domain) {
   }
 }
 
-// General functions to assist with domain parsing
-
+// Replace domain parsing functions with UrlUtils calls
 export function extractRootDomain(url) {
-  try {
-    // Remove protocol and get hostname
-    const hostname = url.replace(/^(https?:\/\/)?(www\.)?/, '');
-    
-    // Parse using PSL
-    const parsed = psl.parse(hostname);
-    
-    if (parsed.domain === null) {
-      logger.warn(`[DomainUtils] Could not parse domain from: ${url}`);
-      return hostname;
-    }
-    
-    logger.info(`[DomainUtils] Extracted ${parsed.domain} from ${url}`);
-    return parsed.domain;
-  } catch (error) {
-    logger.error(`[DomainUtils] Error parsing domain from ${url}:`, error);
-    return url;
-  }
+  return UrlUtils.extractDomain(url);
 }
 
-// Optional: Add more domain-related utilities
 export function isValidDomain(domain) {
-  return psl.isValid(domain);
+  return UrlUtils.isValidDomain(domain);
 }
 
 export function getDomainInfo(url) {
-  const hostname = url.replace(/^(https?:\/\/)?(www\.)?/, '');
-  return psl.parse(hostname);
+  return UrlUtils.getDomainInfo(url);
 }

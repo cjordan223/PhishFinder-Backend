@@ -2,6 +2,7 @@ import { connectDB } from '../config/db.js';
 import logger from '../config/logger.js';
 
 // Helper functions to fetch the metrics data
+// essentially this is a wrapper for the mongodb data we are iframing into the dashboard
 
 export async function getMetricsData(timeRange) {
   try {

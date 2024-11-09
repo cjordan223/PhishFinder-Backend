@@ -123,6 +123,8 @@ export async function checkDatabaseState() {
   });
 }
 
+
+
 export async function getClient() {
   if (!client) {
     await connectDB();

@@ -1,5 +1,6 @@
 import { connectDB } from '../config/db.js';
 import { saveOrUpdateSenderProfile } from '../services/senderProfile.service.js';
+import { senderLanguageProfileService } from '../services/senderLanguageProfile.service.js';
 import logger from '../config/logger.js';
 
 export async function processUnprocessedEmails() {
@@ -7,11 +8,6 @@ export async function processUnprocessedEmails() {
     logger.info('Starting sender profile update job');
 
     try {
-        // Add count of total emails in collection
-        const totalEmails = await db.collection('emails').countDocuments();
-        logger.info(`Total emails in collection: ${totalEmails}`);
-
-        // Find emails that haven't been processed for sender profiles
         const unprocessedEmails = await db.collection('emails')
             .find({ 
                 senderProfileProcessed: { $ne: true }
@@ -25,59 +21,36 @@ export async function processUnprocessedEmails() {
             return;
         }
 
-        // Log the first unprocessed email for debugging
-        logger.info('Sample unprocessed email:', JSON.stringify(unprocessedEmails[0], null, 2));
+        // Group emails by sender
+        const emailsBySender = unprocessedEmails.reduce((acc, email) => {
+            const senderEmail = email.sender.address;
+            if (!acc[senderEmail]) {
+                acc[senderEmail] = [];
+            }
+            acc[senderEmail].push(email);
+            return acc;
+        }, {});
 
-        for (const email of unprocessedEmails) {
+        // Process each sender's emails
+        for (const [senderEmail, emails] of Object.entries(emailsBySender)) {
             try {
-                // Map the email data to match expected structure
-                const mappedEmailData = {
-                    id: email.id,
-                    sender: email.sender,
-                    subject: email.subject,
-                    timestamp: email.timestamp,
-                    metadata: {
-                        date: email.timestamp,
-                        labels: email.behavioral?.labels || [],
-                    },
-                    raw: {
-                        historyId: email.metadata?.historyId,
-                        sizeEstimate: email.metadata?.sizeEstimate
-                    },
-                    body: email.content?.cleanedBody,
-                    extractedUrls: email.content?.metrics?.extractedUrls || [],
-                    security: {
-                        analysis: {
-                            isFlagged: email.security?.flags?.safebrowsingFlag || 
-                                      email.security?.flags?.hasSuspiciousPatterns || 
-                                      email.security?.flags?.hasUrlMismatches,
-                            suspiciousKeywords: [], // Add if available in your data
-                            linkRisks: email.content?.metrics?.urlMismatches || [],
-                            safeBrowsingResult: [] // Add if available in your data
-                        },
-                        authentication: {
-                            spf: email.security?.authentication?.spf?.record,
-                            dkim: email.security?.authentication?.dkim?.record,
-                            dmarc: email.security?.authentication?.dmarc?.record,
-                            summary: `SPF: ${email.security?.authentication?.spf?.status || 'unknown'}, 
-                                    DKIM: ${email.security?.authentication?.dkim?.status || 'unknown'}, 
-                                    DMARC: ${email.security?.authentication?.dmarc?.policy || 'unknown'}`
-                        }
-                    }
-                };
-
-                await saveOrUpdateSenderProfile(mappedEmailData);
+                // Update sender profile
+                await saveOrUpdateSenderProfile(emails[0]); // Use first email for basic profile
                 
-                // Mark email as processed
-                await db.collection('emails').updateOne(
-                    { _id: email._id },
+                // Update language profile
+                await senderLanguageProfileService.analyzeSenderEmails(senderEmail, emails);
+
+                // Mark emails as processed
+                const emailIds = emails.map(email => email._id);
+                await db.collection('emails').updateMany(
+                    { _id: { $in: emailIds } },
                     { $set: { senderProfileProcessed: true }}
                 );
 
-                logger.info(`Processed sender profile for email ID: ${email.id}`);
+                logger.info(`Processed profiles for sender: ${senderEmail}`);
             } catch (error) {
-                logger.error(`Error processing sender profile for email ${email.id}:`, error);
-                // Continue with next email even if one fails
+                logger.error(`Error processing profiles for sender ${senderEmail}:`, error);
+                continue;
             }
         }
 
