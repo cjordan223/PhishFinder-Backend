@@ -8,6 +8,7 @@ import metricsRoutes from './src/routes/metrics.routes.js';
 import whoisRoutes from './src/routes/whois.routes.js';
 import { corsOptions } from './src/middleware/cors.middleware.js';
 import logger from './src/config/logger.js';
+import { startBackgroundJobs } from './src/jobs/scheduler.js';
 
 dotenv.config(); // Load environment variables from .env file
 
@@ -34,6 +35,7 @@ connectDB()
   .then(() => {
     app.listen(PORT, () => {
       logger.info(`Server is running on port ${PORT}`);
+      startBackgroundJobs(); // Start background jobs after server is running
     });
   })
   .catch((error) => {

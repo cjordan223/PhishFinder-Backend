@@ -1205,3 +1205,312 @@
 2024-11-08 10:08:20 [info]: Saved to database with ID: 672e52981d3e3febf640383a
 2024-11-08 10:08:20 [info]: Saved to database with ID: 672e52981d3e3febf6403838
 2024-11-08 10:08:20 [info]: Saved to database with ID: 672e52981d3e3febf640383d
+2024-11-08 23:24:34 [info]: Server is running on port 8080
+2024-11-08 23:25:13 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:25:13 [info]: Analyzing email: {"id":"192c259172bbb128","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"Human Test"}
+2024-11-08 23:25:13 [info]: Cleaned body: Wow we are in a much better spot than I thought we were For starters, we had 46 successful patches from 10/9-10/10. For context we average 2-3 per week normally, due to the update parameter limitations. We never had more than 2 at a time during the entire month of september. I won't be able to verify with r7 or CB before EOD but I can by the morning, I could also spot check some users in the morning if there are any you know that are missing the right version?
+2024-11-08 23:25:13 [info]: Readable text: Wow we are in a much better spot than I thought we were For starters, we had 46 successful patches from 10/9-10/10. For context we average 2-3 per week normally, due to the update parameter limitations. We never had more than 2 at a time during the entire month of september. I won't be able to verify with r7 or CB before EOD but I can by the morning, I could also spot check some users in the morning if there are any you know that are missing the right version?
+2024-11-08 23:25:13 [info]: Text cleaning metrics: {"originalLength":476,"cleanedLength":464,"readableLength":464,"wordCount":91,"sentences":5}
+2024-11-08 23:25:13 [info]: Extracted URLs from text:
+2024-11-08 23:25:13 [info]: Extracted URLs: []
+2024-11-08 23:25:13 [info]: Flagged URLs: []
+2024-11-08 23:25:13 [info]: Suspicious patterns: [{"type":"Prize/Reward","location":"body","matches":["won"]}]
+2024-11-08 23:25:13 [info]: URL mismatches: []
+2024-11-08 23:25:13 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:25:13 [info]: Analyzing email: {"id":"192c7d3ec2017390","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"URL/Text Mismatch Test"}
+2024-11-08 23:25:13 [info]: Cleaned body: google.com
+2024-11-08 23:25:13 [info]: Readable text: google.com
+2024-11-08 23:25:13 [info]: Text cleaning metrics: {"originalLength":39,"cleanedLength":10,"readableLength":10,"wordCount":1,"sentences":2}
+2024-11-08 23:25:13 [info]: Extracted URLs from text:
+2024-11-08 23:25:13 [info]: Extracted URLs: []
+2024-11-08 23:25:13 [info]: Flagged URLs: []
+2024-11-08 23:25:13 [info]: Suspicious patterns: []
+2024-11-08 23:25:13 [info]: URL mismatches: []
+2024-11-08 23:25:13 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:25:13 [info]: Analyzing email: {"id":"192c25782719854e","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"Human Test"}
+2024-11-08 23:25:13 [info]: Cleaned body: Ah good. Glad to see some progress. Trying to get Citrix updated with AX so far is a fucking nightmare. None of my scripts are removing it entirely which is causing the reinstall/update to fail. The funny part is this process shouldn't even need a custom worklet. Citrix is supposed to be a "Supported App" with AX. You're supposed to just select all devices and hit "patch" and be done. But their worklet doesn't take into account citrix is almost always running, and won't update when running.
+2024-11-08 23:25:13 [info]: Readable text: Ah good. Glad to see some progress. Trying to get Citrix updated with AX so far is a fucking nightmare. None of my scripts are removing it entirely which is causing the reinstall/update to fail. The funny part is this process shouldn't even need a custom worklet. Citrix is supposed to be a "Supported App" with AX. You're supposed to just select all devices and hit "patch" and be done. But their worklet doesn't take into account citrix is almost always running, and won't update when running.
+2024-11-08 23:25:13 [info]: Text cleaning metrics: {"originalLength":511,"cleanedLength":495,"readableLength":495,"wordCount":87,"sentences":9}
+2024-11-08 23:25:13 [info]: Extracted URLs from text:
+2024-11-08 23:25:13 [info]: Extracted URLs: []
+2024-11-08 23:25:13 [info]: Flagged URLs: []
+2024-11-08 23:25:13 [info]: Suspicious patterns: [{"type":"Financial","location":"body","matches":["account"]},{"type":"Prize/Reward","location":"body","matches":["won"]}]
+2024-11-08 23:25:13 [info]: URL mismatches: []
+2024-11-08 23:25:13 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:25:13 [info]: Analyzing email: {"id":"192c2582c63d88f1","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"Human Test"}
+2024-11-08 23:25:13 [info]: Cleaned body: exactly. I think I would have it done if that was the only issue, but unfortunately I found a new one. Short version: update worklet continues to fail because trace evidence of old agents exist in the registery. They are not always stored in the same spot, and even my dynamic logic to search for this info is not removing *all *traces. I have detailed failure logs and am have been going over them.
+2024-11-08 23:25:13 [info]: Readable text: exactly. I think I would have it done if that was the only issue, but unfortunately I found a new one. Short version: update worklet continues to fail because trace evidence of old agents exist in the registery. They are not always stored in the same spot, and even my dynamic logic to search for this info is not removing *all *traces. I have detailed failure logs and am have been going over them.
+2024-11-08 23:25:13 [info]: Text cleaning metrics: {"originalLength":407,"cleanedLength":399,"readableLength":399,"wordCount":74,"sentences":6}
+2024-11-08 23:25:13 [info]: Extracted URLs from text:
+2024-11-08 23:25:13 [info]: Extracted URLs: []
+2024-11-08 23:25:13 [info]: Flagged URLs: []
+2024-11-08 23:25:13 [info]: Suspicious patterns: []
+2024-11-08 23:25:13 [info]: URL mismatches: []
+2024-11-08 23:25:13 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:25:13 [info]: Analyzing email: {"id":"192c25b91ba35d49","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"Human Test"}
+2024-11-08 23:25:13 [info]: Cleaned body: Hey, good morning Hope this finds you well and you are the go to person for my issue hahaha. I reached out the other day about citrix and forgot to reply to your email, I did try login into citrix with my same teams credentials without luck, Today I was trying to connect to open vpn and I am facing this issue [image: image]
+2024-11-08 23:25:13 [info]: Readable text: Hey, good morning Hope this finds you well and you are the go to person for my issue hahaha. I reached out the other day about citrix and forgot to reply to your email, I did try login into citrix with my same teams credentials without luck, Today I was trying to connect to open vpn and I am facing this issue [image: image]
+2024-11-08 23:25:13 [info]: Text cleaning metrics: {"originalLength":342,"cleanedLength":325,"readableLength":325,"wordCount":64,"sentences":2}
+2024-11-08 23:25:13 [info]: Extracted URLs from text:
+2024-11-08 23:25:13 [info]: Extracted URLs: []
+2024-11-08 23:25:13 [info]: Flagged URLs: []
+2024-11-08 23:25:13 [info]: Suspicious patterns: [{"type":"Credential Harvesting","location":"body","matches":["login","credential"]}]
+2024-11-08 23:25:13 [info]: URL mismatches: []
+2024-11-08 23:25:13 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:25:13 [info]: Analyzing email: {"id":"192c537e85ab3299","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"No Subject"}
+2024-11-08 23:25:13 [info]: Cleaned body: https://testsafebrowsing.appspot.com/s/unwanted.html
+2024-11-08 23:25:13 [info]: Readable text: https://testsafebrowsing.appspot.com/s/unwanted.html
+2024-11-08 23:25:13 [info]: Text cleaning metrics: {"originalLength":54,"cleanedLength":52,"readableLength":52,"wordCount":1,"sentences":4}
+2024-11-08 23:25:13 [info]: Extracted URLs from text: {"0":"https://testsafebrowsing.appspot.com/s/unwanted.html"}
+2024-11-08 23:25:13 [info]: Extracted URLs: ["https://testsafebrowsing.appspot.com/s/unwanted.html"]
+2024-11-08 23:25:13 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:25:13 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:25:13 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:25:13 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:25:13 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:25:13 [info]: Flagged URLs: [{"url":"https://testsafebrowsing.appspot.com/s/unwanted.html","threatType":"UNWANTED_SOFTWARE"}]
+2024-11-08 23:25:13 [info]: Suspicious patterns: []
+2024-11-08 23:25:13 [info]: URL mismatches: []
+2024-11-08 23:25:13 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:25:13 [info]: Saved to database with ID: 672f0e5935c40bbd942148ca
+2024-11-08 23:25:13 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:25:13 [info]: Analyzing email: {"id":"192c65264348d067","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"No Subject"}
+2024-11-08 23:25:13 [info]: Cleaned body: https://testsafebrowsing.appspot.com/s/phishing.html
+2024-11-08 23:25:13 [info]: Readable text: https://testsafebrowsing.appspot.com/s/phishing.html
+2024-11-08 23:25:13 [info]: Text cleaning metrics: {"originalLength":54,"cleanedLength":52,"readableLength":52,"wordCount":1,"sentences":4}
+2024-11-08 23:25:13 [info]: Extracted URLs from text: {"0":"https://testsafebrowsing.appspot.com/s/phishing.html"}
+2024-11-08 23:25:13 [info]: Extracted URLs: ["https://testsafebrowsing.appspot.com/s/phishing.html"]
+2024-11-08 23:25:14 [info]: Flagged URLs: [{"url":"https://testsafebrowsing.appspot.com/s/phishing.html","threatType":"SOCIAL_ENGINEERING"}]
+2024-11-08 23:25:14 [info]: Suspicious patterns: []
+2024-11-08 23:25:14 [info]: URL mismatches: []
+2024-11-08 23:25:14 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:25:14 [info]: Saved to database with ID: 672f0e5935c40bbd942148cb
+2024-11-08 23:25:14 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:25:14 [info]: Analyzing email: {"id":"192c2588c26fb030","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"Human Test"}
+2024-11-08 23:25:14 [info]: Cleaned body: I have been able to get several "simpler" apps installed no problem with automox, Citrix has just shown itself to be a pretty unwieldy beast to manage remotely via a worklet. For what it's worth I think having me coordinate with Frank &amp; ITM's to patch these manually may end up being the move, but there might be a reason that is not preferred that I'm not aware of.
+2024-11-08 23:25:14 [info]: Readable text: I have been able to get several "simpler" apps installed no problem with automox, Citrix has just shown itself to be a pretty unwieldy beast to manage remotely via a worklet. For what it's worth I think having me coordinate with Frank & ITM's to patch these manually may end up being the move, but there might be a reason that is not preferred that I'm not aware of.
+2024-11-08 23:25:14 [info]: Text cleaning metrics: {"originalLength":379,"cleanedLength":370,"readableLength":366,"wordCount":69,"sentences":3}
+2024-11-08 23:25:14 [info]: Extracted URLs from text:
+2024-11-08 23:25:14 [info]: Extracted URLs: []
+2024-11-08 23:25:14 [info]: Flagged URLs: []
+2024-11-08 23:25:14 [info]: Suspicious patterns: []
+2024-11-08 23:25:14 [info]: URL mismatches: []
+2024-11-08 23:25:14 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:25:14 [info]: Saved to database with ID: 672f0e5a35c40bbd942148cd
+2024-11-08 23:25:14 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:25:14 [info]: Analyzing email: {"id":"192c25af4e0579b9","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"Human Test"}
+2024-11-08 23:25:14 [info]: Cleaned body: providing the license, most licenses like E1 and F3 are by role type, other than that it's direct manager normally. Power automate isn't common but if I have seen people with it at the lodge Aquatics really loves it. Power automate is OP for low-code users. If the AQ manager is requesting it, then the lodge director would be the approval point?
+2024-11-08 23:25:14 [info]: Readable text: providing the license, most licenses like E1 and F3 are by role type, other than that it's direct manager normally. Power automate isn't common but if I have seen people with it at the lodge Aquatics really loves it. Power automate is OP for low-code users. If the AQ manager is requesting it, then the lodge director would be the approval point?
+2024-11-08 23:25:14 [info]: Text cleaning metrics: {"originalLength":359,"cleanedLength":346,"readableLength":346,"wordCount":62,"sentences":5}
+2024-11-08 23:25:14 [info]: Extracted URLs from text:
+2024-11-08 23:25:14 [info]: Extracted URLs: []
+2024-11-08 23:25:14 [info]: Flagged URLs: []
+2024-11-08 23:25:14 [info]: Suspicious patterns: []
+2024-11-08 23:25:14 [info]: URL mismatches: []
+2024-11-08 23:25:14 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:25:14 [info]: Saved to database with ID: 672f0e5a35c40bbd942148ce
+2024-11-08 23:25:14 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:25:14 [info]: Analyzing email: {"id":"192c25504ceeacd0","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"Human Test"}
+2024-11-08 23:25:14 [info]: Cleaned body: Hey James Can you add an environment variable to GWR-14391 for Alex Schacherl w/ CK when you get a chance? I am troubleshooting some Unity connection issues for CK, and this is supposed to assist with Unity communicating with Cisco Umbrella. Just need to open settings as an admin and go to 'edit environment variables' or similar.... and add this variable to the *system variables:* Name: NODE_EXTRA_CA_CERTS Value: C:\ProgramData\Unity\config\cert.pem
+2024-11-08 23:25:14 [info]: Readable text: Hey James Can you add an environment variable to GWR-14391 for Alex Schacherl w/ CK when you get a chance? I am troubleshooting some Unity connection issues for CK, and this is supposed to assist with Unity communicating with Cisco Umbrella. Just need to open settings as an admin and go to 'edit environment variables' or similar.... and add this variable to the *system variables:* Name: NODE_EXTRA_CA_CERTS Value: C:\ProgramData\Unity\config\cert.pem
+2024-11-08 23:25:14 [info]: Text cleaning metrics: {"originalLength":469,"cleanedLength":453,"readableLength":453,"wordCount":69,"sentences":5}
+2024-11-08 23:25:14 [info]: Extracted URLs from text:
+2024-11-08 23:25:14 [info]: Extracted URLs: []
+2024-11-08 23:25:14 [info]: Flagged URLs: []
+2024-11-08 23:25:14 [info]: Suspicious patterns: []
+2024-11-08 23:25:14 [info]: URL mismatches: []
+2024-11-08 23:25:14 [info]: Saved to database with ID: 672f0e5a35c40bbd942148cf
+2024-11-08 23:25:14 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:25:14 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:25:14 [info]: Analyzing email: {"id":"192c259c21de842f","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"Human Test"}
+2024-11-08 23:25:14 [info]: Cleaned body: If it helps you get to the bottom of it, the two identical IT trainings had very different times they were posted, the one I took looked like it had been uploaded weeks earlier - I figured that would be the one to do since it was the earlier of the two That's what looks like happened. The training was assigned on 10/2 and you completed the training that was assigned on 7/18.
+2024-11-08 23:25:14 [info]: Readable text: If it helps you get to the bottom of it, the two identical IT trainings had very different times they were posted, the one I took looked like it had been uploaded weeks earlier - I figured that would be the one to do since it was the earlier of the two That's what looks like happened. The training was assigned on 10/2 and you completed the training that was assigned on 7/18.
+2024-11-08 23:25:14 [info]: Text cleaning metrics: {"originalLength":384,"cleanedLength":377,"readableLength":377,"wordCount":73,"sentences":3}
+2024-11-08 23:25:14 [info]: Extracted URLs from text:
+2024-11-08 23:25:14 [info]: Extracted URLs: []
+2024-11-08 23:25:14 [info]: Flagged URLs: []
+2024-11-08 23:25:14 [info]: Suspicious patterns: []
+2024-11-08 23:25:14 [info]: URL mismatches: []
+2024-11-08 23:25:14 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:25:14 [info]: Saved to database with ID: 672f0e5a35c40bbd942148d1
+2024-11-08 23:25:14 [info]: Saved to database with ID: 672f0e5a35c40bbd942148d0
+2024-11-08 23:25:14 [info]: Saved to database with ID: 672f0e5a35c40bbd942148d2
+2024-11-08 23:25:14 [info]: Saved to database with ID: 672f0e5a35c40bbd942148d3
+2024-11-08 23:25:14 [info]: Saved to database with ID: 672f0e5935c40bbd942148cc
+2024-11-08 23:25:14 [info]: Saved to database with ID: 672f0e5a35c40bbd942148d4
+2024-11-08 23:37:41 [info]: Server is running on port 8080
+2024-11-08 23:38:15 [info]: Server is running on port 8080
+2024-11-08 23:38:15 [info]: Background jobs scheduled successfully
+2024-11-08 23:38:15 [info]: Starting sender profile update job
+2024-11-08 23:38:15 [info]: Found 0 unprocessed emails
+2024-11-08 23:38:15 [info]: Completed sender profile update job
+2024-11-08 23:38:29 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:38:29 [info]: Analyzing email: {"id":"192c7d3ec2017390","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"URL/Text Mismatch Test"}
+2024-11-08 23:38:29 [info]: Cleaned body: google.com
+2024-11-08 23:38:29 [info]: Readable text: google.com
+2024-11-08 23:38:29 [info]: Text cleaning metrics: {"originalLength":39,"cleanedLength":10,"readableLength":10,"wordCount":1,"sentences":2}
+2024-11-08 23:38:29 [info]: Extracted URLs from text:
+2024-11-08 23:38:29 [info]: Extracted URLs: []
+2024-11-08 23:38:29 [info]: Flagged URLs: []
+2024-11-08 23:38:29 [info]: Suspicious patterns: []
+2024-11-08 23:38:29 [info]: URL mismatches: []
+2024-11-08 23:38:29 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:38:29 [info]: Analyzing email: {"id":"192c259172bbb128","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"Human Test"}
+2024-11-08 23:38:29 [info]: Cleaned body: Wow we are in a much better spot than I thought we were For starters, we had 46 successful patches from 10/9-10/10. For context we average 2-3 per week normally, due to the update parameter limitations. We never had more than 2 at a time during the entire month of september. I won't be able to verify with r7 or CB before EOD but I can by the morning, I could also spot check some users in the morning if there are any you know that are missing the right version?
+2024-11-08 23:38:29 [info]: Readable text: Wow we are in a much better spot than I thought we were For starters, we had 46 successful patches from 10/9-10/10. For context we average 2-3 per week normally, due to the update parameter limitations. We never had more than 2 at a time during the entire month of september. I won't be able to verify with r7 or CB before EOD but I can by the morning, I could also spot check some users in the morning if there are any you know that are missing the right version?
+2024-11-08 23:38:29 [info]: Text cleaning metrics: {"originalLength":476,"cleanedLength":464,"readableLength":464,"wordCount":91,"sentences":5}
+2024-11-08 23:38:29 [info]: Extracted URLs from text:
+2024-11-08 23:38:29 [info]: Extracted URLs: []
+2024-11-08 23:38:29 [info]: Flagged URLs: []
+2024-11-08 23:38:29 [info]: Suspicious patterns: [{"type":"Prize/Reward","location":"body","matches":["won"]}]
+2024-11-08 23:38:29 [info]: URL mismatches: []
+2024-11-08 23:38:29 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:38:29 [info]: Analyzing email: {"id":"192c2588c26fb030","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"Human Test"}
+2024-11-08 23:38:29 [info]: Cleaned body: I have been able to get several "simpler" apps installed no problem with automox, Citrix has just shown itself to be a pretty unwieldy beast to manage remotely via a worklet. For what it's worth I think having me coordinate with Frank &amp; ITM's to patch these manually may end up being the move, but there might be a reason that is not preferred that I'm not aware of.
+2024-11-08 23:38:29 [info]: Readable text: I have been able to get several "simpler" apps installed no problem with automox, Citrix has just shown itself to be a pretty unwieldy beast to manage remotely via a worklet. For what it's worth I think having me coordinate with Frank & ITM's to patch these manually may end up being the move, but there might be a reason that is not preferred that I'm not aware of.
+2024-11-08 23:38:29 [info]: Text cleaning metrics: {"originalLength":379,"cleanedLength":370,"readableLength":366,"wordCount":69,"sentences":3}
+2024-11-08 23:38:29 [info]: Extracted URLs from text:
+2024-11-08 23:38:29 [info]: Extracted URLs: []
+2024-11-08 23:38:29 [info]: Flagged URLs: []
+2024-11-08 23:38:29 [info]: Suspicious patterns: []
+2024-11-08 23:38:29 [info]: URL mismatches: []
+2024-11-08 23:38:29 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:38:29 [info]: Analyzing email: {"id":"192c25af4e0579b9","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"Human Test"}
+2024-11-08 23:38:29 [info]: Cleaned body: providing the license, most licenses like E1 and F3 are by role type, other than that it's direct manager normally. Power automate isn't common but if I have seen people with it at the lodge Aquatics really loves it. Power automate is OP for low-code users. If the AQ manager is requesting it, then the lodge director would be the approval point?
+2024-11-08 23:38:29 [info]: Readable text: providing the license, most licenses like E1 and F3 are by role type, other than that it's direct manager normally. Power automate isn't common but if I have seen people with it at the lodge Aquatics really loves it. Power automate is OP for low-code users. If the AQ manager is requesting it, then the lodge director would be the approval point?
+2024-11-08 23:38:29 [info]: Text cleaning metrics: {"originalLength":359,"cleanedLength":346,"readableLength":346,"wordCount":62,"sentences":5}
+2024-11-08 23:38:29 [info]: Extracted URLs from text:
+2024-11-08 23:38:29 [info]: Extracted URLs: []
+2024-11-08 23:38:29 [info]: Flagged URLs: []
+2024-11-08 23:38:29 [info]: Suspicious patterns: []
+2024-11-08 23:38:29 [info]: URL mismatches: []
+2024-11-08 23:38:29 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:38:29 [info]: Analyzing email: {"id":"192c65264348d067","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"No Subject"}
+2024-11-08 23:38:29 [info]: Cleaned body: https://testsafebrowsing.appspot.com/s/phishing.html
+2024-11-08 23:38:29 [info]: Readable text: https://testsafebrowsing.appspot.com/s/phishing.html
+2024-11-08 23:38:29 [info]: Text cleaning metrics: {"originalLength":54,"cleanedLength":52,"readableLength":52,"wordCount":1,"sentences":4}
+2024-11-08 23:38:29 [info]: Extracted URLs from text: {"0":"https://testsafebrowsing.appspot.com/s/phishing.html"}
+2024-11-08 23:38:29 [info]: Extracted URLs: ["https://testsafebrowsing.appspot.com/s/phishing.html"]
+2024-11-08 23:38:29 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:38:29 [info]: Analyzing email: {"id":"192c25504ceeacd0","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"Human Test"}
+2024-11-08 23:38:29 [info]: Cleaned body: Hey James Can you add an environment variable to GWR-14391 for Alex Schacherl w/ CK when you get a chance? I am troubleshooting some Unity connection issues for CK, and this is supposed to assist with Unity communicating with Cisco Umbrella. Just need to open settings as an admin and go to 'edit environment variables' or similar.... and add this variable to the *system variables:* Name: NODE_EXTRA_CA_CERTS Value: C:\ProgramData\Unity\config\cert.pem
+2024-11-08 23:38:29 [info]: Readable text: Hey James Can you add an environment variable to GWR-14391 for Alex Schacherl w/ CK when you get a chance? I am troubleshooting some Unity connection issues for CK, and this is supposed to assist with Unity communicating with Cisco Umbrella. Just need to open settings as an admin and go to 'edit environment variables' or similar.... and add this variable to the *system variables:* Name: NODE_EXTRA_CA_CERTS Value: C:\ProgramData\Unity\config\cert.pem
+2024-11-08 23:38:29 [info]: Text cleaning metrics: {"originalLength":469,"cleanedLength":453,"readableLength":453,"wordCount":69,"sentences":5}
+2024-11-08 23:38:29 [info]: Extracted URLs from text:
+2024-11-08 23:38:29 [info]: Extracted URLs: []
+2024-11-08 23:38:29 [info]: Flagged URLs: []
+2024-11-08 23:38:29 [info]: Suspicious patterns: []
+2024-11-08 23:38:29 [info]: URL mismatches: []
+2024-11-08 23:38:29 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:38:29 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:38:29 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:38:29 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:38:29 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:38:29 [info]: Flagged URLs: [{"url":"https://testsafebrowsing.appspot.com/s/phishing.html","threatType":"SOCIAL_ENGINEERING"}]
+2024-11-08 23:38:29 [info]: Suspicious patterns: []
+2024-11-08 23:38:29 [info]: URL mismatches: []
+2024-11-08 23:38:29 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:38:29 [info]: Saved to database with ID: 672f1175f6f8e53d6dcf40df
+2024-11-08 23:38:30 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:38:30 [info]: Analyzing email: {"id":"192c25b91ba35d49","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"Human Test"}
+2024-11-08 23:38:30 [info]: Cleaned body: Hey, good morning Hope this finds you well and you are the go to person for my issue hahaha. I reached out the other day about citrix and forgot to reply to your email, I did try login into citrix with my same teams credentials without luck, Today I was trying to connect to open vpn and I am facing this issue [image: image]
+2024-11-08 23:38:30 [info]: Readable text: Hey, good morning Hope this finds you well and you are the go to person for my issue hahaha. I reached out the other day about citrix and forgot to reply to your email, I did try login into citrix with my same teams credentials without luck, Today I was trying to connect to open vpn and I am facing this issue [image: image]
+2024-11-08 23:38:30 [info]: Text cleaning metrics: {"originalLength":342,"cleanedLength":325,"readableLength":325,"wordCount":64,"sentences":2}
+2024-11-08 23:38:30 [info]: Extracted URLs from text:
+2024-11-08 23:38:30 [info]: Extracted URLs: []
+2024-11-08 23:38:30 [info]: Flagged URLs: []
+2024-11-08 23:38:30 [info]: Suspicious patterns: [{"type":"Credential Harvesting","location":"body","matches":["login","credential"]}]
+2024-11-08 23:38:30 [info]: URL mismatches: []
+2024-11-08 23:38:30 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:38:30 [info]: Saved to database with ID: 672f1175f6f8e53d6dcf40e0
+2024-11-08 23:38:30 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:38:30 [info]: Analyzing email: {"id":"192c2582c63d88f1","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"Human Test"}
+2024-11-08 23:38:30 [info]: Cleaned body: exactly. I think I would have it done if that was the only issue, but unfortunately I found a new one. Short version: update worklet continues to fail because trace evidence of old agents exist in the registery. They are not always stored in the same spot, and even my dynamic logic to search for this info is not removing *all *traces. I have detailed failure logs and am have been going over them.
+2024-11-08 23:38:30 [info]: Readable text: exactly. I think I would have it done if that was the only issue, but unfortunately I found a new one. Short version: update worklet continues to fail because trace evidence of old agents exist in the registery. They are not always stored in the same spot, and even my dynamic logic to search for this info is not removing *all *traces. I have detailed failure logs and am have been going over them.
+2024-11-08 23:38:30 [info]: Text cleaning metrics: {"originalLength":407,"cleanedLength":399,"readableLength":399,"wordCount":74,"sentences":6}
+2024-11-08 23:38:30 [info]: Extracted URLs from text:
+2024-11-08 23:38:30 [info]: Extracted URLs: []
+2024-11-08 23:38:30 [info]: Flagged URLs: []
+2024-11-08 23:38:30 [info]: Suspicious patterns: []
+2024-11-08 23:38:30 [info]: URL mismatches: []
+2024-11-08 23:38:30 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:38:30 [info]: Saved to database with ID: 672f1176f6f8e53d6dcf40e3
+2024-11-08 23:38:30 [info]: Saved to database with ID: 672f1176f6f8e53d6dcf40e4
+2024-11-08 23:38:30 [info]: Saved to database with ID: 672f1176f6f8e53d6dcf40e5
+2024-11-08 23:38:30 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:38:30 [info]: Analyzing email: {"id":"192c259c21de842f","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"Human Test"}
+2024-11-08 23:38:30 [info]: Cleaned body: If it helps you get to the bottom of it, the two identical IT trainings had very different times they were posted, the one I took looked like it had been uploaded weeks earlier - I figured that would be the one to do since it was the earlier of the two That's what looks like happened. The training was assigned on 10/2 and you completed the training that was assigned on 7/18.
+2024-11-08 23:38:30 [info]: Readable text: If it helps you get to the bottom of it, the two identical IT trainings had very different times they were posted, the one I took looked like it had been uploaded weeks earlier - I figured that would be the one to do since it was the earlier of the two That's what looks like happened. The training was assigned on 10/2 and you completed the training that was assigned on 7/18.
+2024-11-08 23:38:30 [info]: Text cleaning metrics: {"originalLength":384,"cleanedLength":377,"readableLength":377,"wordCount":73,"sentences":3}
+2024-11-08 23:38:30 [info]: Extracted URLs from text:
+2024-11-08 23:38:30 [info]: Extracted URLs: []
+2024-11-08 23:38:30 [info]: Flagged URLs: []
+2024-11-08 23:38:30 [info]: Suspicious patterns: []
+2024-11-08 23:38:30 [info]: URL mismatches: []
+2024-11-08 23:38:30 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:38:30 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:38:30 [info]: Analyzing email: {"id":"192c25782719854e","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"Human Test"}
+2024-11-08 23:38:30 [info]: Cleaned body: Ah good. Glad to see some progress. Trying to get Citrix updated with AX so far is a fucking nightmare. None of my scripts are removing it entirely which is causing the reinstall/update to fail. The funny part is this process shouldn't even need a custom worklet. Citrix is supposed to be a "Supported App" with AX. You're supposed to just select all devices and hit "patch" and be done. But their worklet doesn't take into account citrix is almost always running, and won't update when running.
+2024-11-08 23:38:30 [info]: Readable text: Ah good. Glad to see some progress. Trying to get Citrix updated with AX so far is a fucking nightmare. None of my scripts are removing it entirely which is causing the reinstall/update to fail. The funny part is this process shouldn't even need a custom worklet. Citrix is supposed to be a "Supported App" with AX. You're supposed to just select all devices and hit "patch" and be done. But their worklet doesn't take into account citrix is almost always running, and won't update when running.
+2024-11-08 23:38:30 [info]: Text cleaning metrics: {"originalLength":511,"cleanedLength":495,"readableLength":495,"wordCount":87,"sentences":9}
+2024-11-08 23:38:30 [info]: Extracted URLs from text:
+2024-11-08 23:38:30 [info]: Extracted URLs: []
+2024-11-08 23:38:30 [info]: Flagged URLs: []
+2024-11-08 23:38:30 [info]: Suspicious patterns: [{"type":"Financial","location":"body","matches":["account"]},{"type":"Prize/Reward","location":"body","matches":["won"]}]
+2024-11-08 23:38:30 [info]: URL mismatches: []
+2024-11-08 23:38:30 [info]: Incoming POST request to /analysis/analyze-email
+2024-11-08 23:38:30 [info]: Analyzing email: {"id":"192c537e85ab3299","sender":{"address":"phishfindertestemail@gmail.com","displayName":"Phish Finder","domain":"gmail.com"},"subject":"No Subject"}
+2024-11-08 23:38:30 [info]: Cleaned body: https://testsafebrowsing.appspot.com/s/unwanted.html
+2024-11-08 23:38:30 [info]: Readable text: https://testsafebrowsing.appspot.com/s/unwanted.html
+2024-11-08 23:38:30 [info]: Text cleaning metrics: {"originalLength":54,"cleanedLength":52,"readableLength":52,"wordCount":1,"sentences":4}
+2024-11-08 23:38:30 [info]: Extracted URLs from text: {"0":"https://testsafebrowsing.appspot.com/s/unwanted.html"}
+2024-11-08 23:38:30 [info]: Extracted URLs: ["https://testsafebrowsing.appspot.com/s/unwanted.html"]
+2024-11-08 23:38:30 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:38:30 [info]: Saved to database with ID: 672f1176f6f8e53d6dcf40e6
+2024-11-08 23:38:30 [info]: Flagged URLs: [{"url":"https://testsafebrowsing.appspot.com/s/unwanted.html","threatType":"UNWANTED_SOFTWARE"}]
+2024-11-08 23:38:30 [info]: Suspicious patterns: []
+2024-11-08 23:38:30 [info]: URL mismatches: []
+2024-11-08 23:38:30 [info]: DNS records: {"spf":"v=spf1 redirect=_spf.google.com","dkim":"No DKIM record found","dmarc":"v=DMARC1; p=none; sp=quarantine; rua=mailto:mailauth-reports@google.com","summary":"SPF: Pass, DKIM: Fail, DMARC: Pass"}
+2024-11-08 23:38:30 [info]: Saved to database with ID: 672f1176f6f8e53d6dcf40e7
+2024-11-08 23:38:30 [info]: Saved to database with ID: 672f1176f6f8e53d6dcf40e8
+2024-11-08 23:38:30 [info]: Saved to database with ID: 672f1176f6f8e53d6dcf40e9
+2024-11-08 23:38:30 [info]: Saved to database with ID: 672f1175f6f8e53d6dcf40e1
+2024-11-08 23:38:30 [info]: Saved to database with ID: 672f1175f6f8e53d6dcf40e2
+2024-11-08 23:39:28 [info]: Server is running on port 8080
+2024-11-08 23:39:28 [info]: Background jobs scheduled successfully
+2024-11-08 23:39:28 [info]: Starting sender profile update job
+2024-11-08 23:39:28 [info]: Found 11 unprocessed emails
+2024-11-08 23:39:28 [info]: Attempting to save email entry:
+2024-11-08 23:39:28 [info]: Creating new profile:
+2024-11-08 23:39:28 [info]: Processed sender profile for email ID: 192c7d3ec2017390
+2024-11-08 23:39:28 [info]: Attempting to save email entry:
+2024-11-08 23:39:28 [info]: Update operation:
+2024-11-08 23:39:29 [info]: Processed sender profile for email ID: 192c25af4e0579b9
+2024-11-08 23:39:29 [info]: Attempting to save email entry:
+2024-11-08 23:39:29 [info]: Update operation:
+2024-11-08 23:39:29 [info]: Processed sender profile for email ID: 192c25504ceeacd0
+2024-11-08 23:39:29 [info]: Attempting to save email entry:
+2024-11-08 23:39:29 [info]: Update operation:
+2024-11-08 23:39:29 [info]: Processed sender profile for email ID: 192c2588c26fb030
+2024-11-08 23:39:29 [info]: Attempting to save email entry:
+2024-11-08 23:39:29 [info]: Update operation:
+2024-11-08 23:39:29 [info]: Processed sender profile for email ID: 192c25b91ba35d49
+2024-11-08 23:39:29 [info]: Attempting to save email entry:
+2024-11-08 23:39:29 [info]: Update operation:
+2024-11-08 23:39:29 [info]: Processed sender profile for email ID: 192c2582c63d88f1
+2024-11-08 23:39:29 [info]: Attempting to save email entry:
+2024-11-08 23:39:29 [info]: Update operation:
+2024-11-08 23:39:29 [info]: Processed sender profile for email ID: 192c259c21de842f
+2024-11-08 23:39:29 [info]: Attempting to save email entry:
+2024-11-08 23:39:29 [info]: Update operation:
+2024-11-08 23:39:29 [info]: Processed sender profile for email ID: 192c25782719854e
+2024-11-08 23:39:29 [info]: Attempting to save email entry:
+2024-11-08 23:39:29 [info]: Update operation:
+2024-11-08 23:39:29 [info]: Processed sender profile for email ID: 192c537e85ab3299
+2024-11-08 23:39:30 [info]: Attempting to save email entry:
+2024-11-08 23:39:30 [info]: Update operation:
+2024-11-08 23:39:30 [info]: Processed sender profile for email ID: 192c259172bbb128
+2024-11-08 23:39:30 [info]: Attempting to save email entry:
+2024-11-08 23:39:30 [info]: Update operation:
+2024-11-08 23:39:30 [info]: Processed sender profile for email ID: 192c65264348d067
+2024-11-08 23:39:30 [info]: Completed sender profile update job

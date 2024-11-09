@@ -53,7 +53,8 @@ export async function saveEmailAnalysis(emailData) {
         ...emailData.sender,
         whoisData: null  // Initialize as null
       },
-      whoisLastUpdated: null  // Initialize as null
+      whoisLastUpdated: null,  // Initialize as null
+      senderProfileProcessed: false  // Add this field to track profile processing status
     };
 
     // If it doesn't exist, insert the new email data
