@@ -7,6 +7,10 @@ export async function processUnprocessedEmails() {
     logger.info('Starting sender profile update job');
 
     try {
+        // Add count of total emails in collection
+        const totalEmails = await db.collection('emails').countDocuments();
+        logger.info(`Total emails in collection: ${totalEmails}`);
+
         // Find emails that haven't been processed for sender profiles
         const unprocessedEmails = await db.collection('emails')
             .find({ 
@@ -15,6 +19,14 @@ export async function processUnprocessedEmails() {
             .toArray();
 
         logger.info(`Found ${unprocessedEmails.length} unprocessed emails`);
+        
+        if (unprocessedEmails.length === 0) {
+            logger.info('No unprocessed emails found');
+            return;
+        }
+
+        // Log the first unprocessed email for debugging
+        logger.info('Sample unprocessed email:', JSON.stringify(unprocessedEmails[0], null, 2));
 
         for (const email of unprocessedEmails) {
             try {

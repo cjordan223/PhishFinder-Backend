@@ -5,63 +5,100 @@
 import dns from 'dns';
 import psl from 'psl';
 import logger from '../config/logger.js';
+import { cacheService } from './cache.service.js';
 // PSL is a library for parsing and validating domain names, more powerful than hand written regex
 
-function getSPFRecord(domain) {
+async function getSPFRecord(domain) {
+  const cacheKey = `spf:${domain}`;
+  const cachedRecord = cacheService.get(cacheKey);
+  
+  if (cachedRecord) {
+    logger.info(`Cache hit for SPF record: ${domain}`);
+    return cachedRecord;
+  }
+
   return new Promise((resolve, reject) => {
     dns.resolveTxt(domain, (err, records) => {
       if (err) {
         return reject(err);
       }
       const spfRecord = records.flat().find(record => record.startsWith('v=spf1'));
-      resolve(spfRecord || 'No SPF record found');
+      const result = spfRecord || 'No SPF record found';
+      
+      // Cache the result
+      cacheService.set(cacheKey, result);
+      resolve(result);
     });
   });
 }
 
-function getDKIMRecord(domain) {
+async function getDKIMRecord(domain) {
+  const cacheKey = `dkim:${domain}`;
+  const cachedRecord = cacheService.get(cacheKey);
+  
+  if (cachedRecord) {
+    logger.info(`Cache hit for DKIM record: ${domain}`);
+    return cachedRecord;
+  }
+
   return new Promise((resolve, reject) => {
-    const selectors = ['default._domainkey', 'selector1._domainkey', 'selector2._domainkey']; // Common selectors
+    const selectors = ['default._domainkey', 'selector1._domainkey', 'selector2._domainkey'];
     let found = false;
 
-    const checkSelector = (index) => {
+    const checkSelector = async (index) => {
       if (index >= selectors.length) {
         if (!found) {
-          resolve('No DKIM record found');
+          const result = 'No DKIM record found';
+          cacheService.set(cacheKey, result);
+          resolve(result);
         }
         return;
       }
 
       const selector = selectors[index];
-      dns.resolveTxt(`${selector}.${domain}`, (err, records) => {
-        if (err && err.code !== 'ENOTFOUND') {
-          return reject(err);
-        }
+      try {
+        const records = await dns.promises.resolveTxt(`${selector}.${domain}`);
         if (records && records.length > 0) {
           const dkimRecord = records.flat().join('');
           if (dkimRecord) {
             found = true;
+            cacheService.set(cacheKey, dkimRecord);
             return resolve(dkimRecord);
           }
         }
         checkSelector(index + 1);
-      });
+      } catch (err) {
+        if (err.code !== 'ENOTFOUND') {
+          return reject(err);
+        }
+        checkSelector(index + 1);
+      }
     };
 
     checkSelector(0);
   });
 }
 
-function getDMARCRecord(domain) {
-  return new Promise((resolve, reject) => {
-    dns.resolveTxt(`_dmarc.${domain}`, (err, records) => {
-      if (err) {
-        return reject(err);
-      }
-      const dmarcRecord = records.flat().join('');
-      resolve(dmarcRecord || 'No DMARC record found');
-    });
-  });
+async function getDMARCRecord(domain) {
+  const cacheKey = `dmarc:${domain}`;
+  const cachedRecord = cacheService.get(cacheKey);
+  
+  if (cachedRecord) {
+    logger.info(`Cache hit for DMARC record: ${domain}`);
+    return cachedRecord;
+  }
+
+  try {
+    const records = await dns.promises.resolveTxt(`_dmarc.${domain}`);
+    const dmarcRecord = records.flat().join('');
+    const result = dmarcRecord || 'No DMARC record found';
+    cacheService.set(cacheKey, result);
+    return result;
+  } catch (err) {
+    const result = 'No DMARC record found';
+    cacheService.set(cacheKey, result);
+    return result;
+  }
 }
 
 export async function getEmailAuthenticationDetails(domain) {
