@@ -17,23 +17,145 @@ Let the container start up for WHOIS server, then run
 ```
 node index.js
 ```
-## To Do's
+## High Level
 
-## 1. Email Metadata Collection
-* Each time you fetch an email, gather and store the following metadata in your database:
-* Sender Information:
-    * Email Address: The sender's full email (e.g., mom@email.com).
-    * Domain: Extracted from the email address (e.g., email.com).
-    * Sender Name: If available in the headers.
-* Authentication Information:
-    * DMARC, SPF, and DKIM: These are DNS-based email authentication methods. They can help verify if an email actually came from the domain it claims to be from. DMARC, SPF, and DKIM data can often be found in email headers (e.g., Authentication-Results), which your backend can parse.
-* Frequency and Trends:
-    * Email Count: Track how many times you receive an email from this address or domain.
-    * Last Seen: Timestamp of the most recent email received from this sender.
-    * Subjects: Collect subject lines for pattern analysis.
-* Content Patterns:
-    * Keywords: Extract common keywords in the subject or body, especially if they match known phishing keywords.
-    * Attachments and Links: Track if certain senders commonly send attachments or links, which could be useful for detecting phishing behavior.
+### Core Architecture
+
+The project follows a client-server architecture:
+
+1. Frontend (Vue.js)
+
+-   User interface for email analysis
+
+-   Real-time updates and visualizations
+
+-   Authentication and profile management
+
+-   Backend (Node.js)
+
+-   Email processing and analysis
+
+-   Language profiling
+
+-   Security scoring
+
+### Main Flow
+
+-   User Authentication
+
+-   User logs in/registers
+
+-   OAuth2 authentication with email providers
+
+-   Session management
+
+**-   Email Processing**
+    
+    User Email → Gmail API → Raw Email Data → Parser → Structured Data
+    
+
+**-   Analysis Pipeline**
+    
+    Structured Email
+    
+    ↓
+    
+    Language Profile Analysis
+    
+    ↓
+    
+    Security Analysis
+    
+    ↓
+    
+    Risk Assessment
+    
+
+### Key Objects/Services
+
+-   **EmailAnalysisService**
+
+	  	Handles email parsing and initial processing
+
+	   	Creates structured email objects
+
+		Manages analysis workflow
+
+-   **SenderLanguageProfileService**
+
+		   Builds sender profiles
+
+		  Topic analysis
+
+		  Writing style analysis
+
+	  	 Pattern recognition
+
+- **SecurityAnalysisService**
+
+
+	   URL analysis
+
+	  Header analysis
+
+	   Threat scoring
+
+	   UserService
+
+	   User management
+
+	   Profile settings
+
+	   Authentication
+
+### Data Flow
+
+User → Frontend → API Gateway
+
+↓
+
+Backend Services
+
+↓
+
+Database (MongoDB)
+
+### Key Features
+
+-   Language Analysis
+
+-   Topic modeling
+
+-   Sentiment analysis
+
+-   Pattern detection
+
+-   Security Checks
+
+-   URL verification
+
+-   Header analysis
+
+-   Content scanning
+
+-   Profile Building
+
+-   Sender behavior patterns
+
+-   Communication style
+
+-   Historical analysis
+
+This architecture allows for:
+
+-   Scalable email processing
+
+-   Real-time analysis
+
+-   Secure data handling
+
+-   Extensible analysis pipeline
+
 
 
 
