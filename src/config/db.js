@@ -4,7 +4,7 @@ import { createIndexes } from './db.indexes.js';
 
 dotenv.config();
 
-const uri = process.env.MONGO_URI; // MongoDB connection URI
+const uri = process.env.MONGO_URI;
 let client = null;
 let db = null;
 
@@ -16,17 +16,13 @@ const options = {
   socketTimeoutMS: 45000,
 };
 
-// Function to connect to MongoDB
 export async function connectDB() {
   if (db) return db;
 
   try {
     client = await MongoClient.connect(uri, options);
     db = client.db('phishfinder');
-    
-    // Create indexes on first connection
     await createIndexes(db);
-    
     console.log('Connected to MongoDB with connection pooling');
     return db;
   } catch (error) {
@@ -35,7 +31,6 @@ export async function connectDB() {
   }
 }
 
-// Function to disconnect from MongoDB
 export async function disconnectDB() {
   if (client) {
     await client.close();
@@ -45,13 +40,11 @@ export async function disconnectDB() {
   }
 }
 
-// Function to save email analysis to the database, only if it doesn't exist
 export async function saveEmailAnalysis(emailData, processProfileImmediately = true) {
   const db = await connectDB();
   const emailsCollection = db.collection('emails');
   
   try {
-    // Check if an email with the same id already exists
     const existingEmail = await emailsCollection.findOne({ id: emailData.id });
     
     if (existingEmail) {
@@ -59,7 +52,6 @@ export async function saveEmailAnalysis(emailData, processProfileImmediately = t
       return existingEmail._id;
     }
 
-    // Ensure sender object has whoisData initialized as null
     const emailDataWithNull = {
       ...emailData,
       sender: {
@@ -67,26 +59,28 @@ export async function saveEmailAnalysis(emailData, processProfileImmediately = t
         whoisData: null
       },
       whoisLastUpdated: null,
-      senderProfileProcessed: false
+      senderProfileProcessed: false,
+      languageProfileProcessed: false
     };
 
-    // If it doesn't exist, insert the new email data
     const result = await emailsCollection.insertOne(emailDataWithNull);
     console.log('Email analysis saved:', result.insertedId);
 
-    // Optionally process the sender profile immediately
     if (processProfileImmediately) {
       try {
         const { saveOrUpdateSenderProfile } = await import('../services/senderProfile.service.js');
         await saveOrUpdateSenderProfile(emailData);
-        // Mark as processed
         await emailsCollection.updateOne(
           { _id: result.insertedId },
-          { $set: { senderProfileProcessed: true }}
+          { 
+            $set: { 
+              senderProfileProcessed: true,
+              languageProfileProcessed: false
+            }
+          }
         );
       } catch (profileError) {
         console.error('Error processing sender profile:', profileError);
-        // Don't throw the error - we still want to return the saved email ID
       }
     }
 
@@ -98,7 +92,6 @@ export async function saveEmailAnalysis(emailData, processProfileImmediately = t
   }
 }
 
-// Ensure the MongoDB connection is closed when the process exits
 process.on('SIGINT', async () => {
   await disconnectDB();
   process.exit(0);
@@ -109,12 +102,16 @@ process.on('SIGTERM', async () => {
   process.exit(0);
 });
 
-// Add this function to help debug
 export async function checkDatabaseState() {
   const db = await connectDB();
   const emailCount = await db.collection('emails').countDocuments();
   const profileCount = await db.collection('sender_profiles').countDocuments();
-  const unprocessedCount = await db.collection('emails').countDocuments({ senderProfileProcessed: { $ne: true } });
+  const unprocessedCount = await db.collection('emails').countDocuments({
+    $or: [
+      { senderProfileProcessed: { $ne: true } },
+      { languageProfileProcessed: { $ne: true } }
+    ]
+  });
   
   console.log({
     totalEmails: emailCount,
@@ -122,8 +119,6 @@ export async function checkDatabaseState() {
     unprocessedEmails: unprocessedCount
   });
 }
-
-
 
 export async function getClient() {
   if (!client) {

@@ -1,117 +1,77 @@
 import winkNLP from 'wink-nlp';
 import model from 'wink-eng-lite-web-model';
 import { connectDB } from '../config/db.js';
-import { cleanEmailBody, extractReadableText } from '../utils/textCleaner.js';
 import logger from '../config/logger.js';
-import { analyzeSuspiciousPatterns } from './analysis.service.js';
 
 const nlp = winkNLP(model);
-const its = nlp.its;
-const as = nlp.as;
 
 class SenderLanguageProfileService {
     constructor() {
-        this.cache = new Map(); // Simple in-memory cache
+        this.cache = new Map();
     }
 
     async analyzeSenderEmails(senderEmail, emails) {
         try {
-            // Get the sender profile to access all historical emails
+            logger.info(`Starting language analysis for sender ${senderEmail} with ${emails.length} emails`);
+            
+            emails.forEach(email => {
+                const emailBody = email.body || email.content?.cleanedBody;
+                logger.debug(`Email ${email.id} content status:`, {
+                    hasBody: !!emailBody,
+                    bodyLength: emailBody?.length || 0
+                });
+            });
+
             const db = await connectDB();
             const senderProfile = await db.collection('sender_profiles')
                 .findOne({ 'sender.address': senderEmail });
             
-            // Combine existing emails with new ones for analysis
-            const allEmails = senderProfile ? 
-                [...new Set([...senderProfile.emails, ...emails].map(e => e.id))]
-                    .map(id => [...senderProfile.emails, ...emails].find(e => e.id === id)) : 
-                emails;
+            const allEmails = [...emails];
+            if (senderProfile?.emails) {
+                allEmails.push(...senderProfile.emails);
+            }
 
-            const profile = {
+            let languageProfile = {
                 wordFrequency: {},
-                commonPhrases: {},
-                entityTypes: {},
                 averageSentenceLength: 0,
-                totalEmails: allEmails.length,
-                lastUpdated: new Date(),
-                commonEntities: {},
-                sentimentTrend: [],
-                formalityScore: 0
+                commonPhrases: [],
+                topicAnalysis: [],
+                lastUpdated: new Date()
             };
 
             let totalSentences = 0;
             let totalWords = 0;
 
             for (const email of allEmails) {
-                if (!email.content?.cleanedBody) {
-                    logger.warn(`Email ${email.id} has no cleaned body content, skipping`);
+                const emailBody = email.body || email.content?.cleanedBody;
+                if (!emailBody) {
+                    logger.warn(`Email ${email.id} has no body content, skipping`);
                     continue;
                 }
 
-                const doc = nlp.readDoc(email.content.cleanedBody);
-
-                // Process sentences
+                logger.debug(`Analyzing email ${email.id} content`);
+                const doc = nlp.readDoc(emailBody);
+                
                 const sentences = doc.sentences().out();
                 totalSentences += sentences.length;
-
-                // Process tokens and words
-                const tokens = doc.tokens().out();
-                const words = tokens.filter(token => 
-                    doc.tokens().itemAt(tokens.indexOf(token)).out(its.type) === 'word'
-                );
+                
+                const words = doc.tokens().out();
                 totalWords += words.length;
-
-                // Update word frequency
                 words.forEach(word => {
-                    const lemma = doc.tokens().itemAt(tokens.indexOf(word)).out(its.lemma);
-                    profile.wordFrequency[lemma] = (profile.wordFrequency[lemma] || 0) + 1;
-                });
-
-                // Process entities
-                const entities = doc.entities().out(its.type);
-                const entityText = doc.entities().out(its.detail);
-                entities.forEach((entity, index) => {
-                    profile.entityTypes[entity] = (profile.entityTypes[entity] || 0) + 1;
-                    if (!profile.commonEntities[entity]) {
-                        profile.commonEntities[entity] = [];
-                    }
-                    if (!profile.commonEntities[entity].includes(entityText[index])) {
-                        profile.commonEntities[entity].push(entityText[index]);
-                    }
-                });
-
-                // Calculate sentiment using pattern matching instead
-                const suspiciousPatterns = analyzeSuspiciousPatterns(
-                    email.content.cleanedBody, 
-                    email.subject
-                );
-                const sentiment = suspiciousPatterns.length ? -1 : 0; // Simple negative/neutral sentiment
-                profile.sentimentTrend.push({
-                    timestamp: email.timestamp,
-                    score: sentiment,
-                    patterns: suspiciousPatterns
+                    languageProfile.wordFrequency[word] = (languageProfile.wordFrequency[word] || 0) + 1;
                 });
             }
-
-            // Calculate averages and normalize
-            profile.averageSentenceLength = totalWords / totalSentences;
-            
-            // Get top words (exclude common stop words)
-            const tempDoc = nlp.readDoc(Object.keys(profile.wordFrequency).join(' '));
-            profile.wordFrequency = Object.fromEntries(
-                Object.entries(profile.wordFrequency)
-                    .filter(([word]) => word && word.length > 2) // Basic filtering
-                    .sort(([,a], [,b]) => b - a)
-                    .slice(0, 100)
-            );
-
-            // Save to database and cache
-            await this.saveSenderLanguageProfile(senderEmail, profile);
-
-            return profile;
-
+            languageProfile.averageSentenceLength = totalWords / totalSentences;
+            logger.info(`Language profile stats for ${senderEmail}:`, {
+                totalEmails: allEmails.length,
+                totalSentences,
+                totalWords,
+                averageSentenceLength: languageProfile.averageSentenceLength,
+                uniqueWords: Object.keys(languageProfile.wordFrequency).length
+            });
+            await this.saveSenderLanguageProfile(senderEmail, languageProfile);
         } catch (error) {
-            logger.error('Error analyzing sender emails:', error);
+            logger.error(`Error in language analysis for ${senderEmail}:`, error);
             throw error;
         }
     }
@@ -126,12 +86,10 @@ class SenderLanguageProfileService {
                         languageProfile: profile,
                         languageProfileLastUpdated: new Date()
                     }
-                },
-                { upsert: true }
+                }
             );
             
-            // Also cache it
-            await this.cache.set(`sender_profile:${senderEmail}`, profile);
+            this.cache.set(`sender_profile:${senderEmail}`, profile);
         } catch (error) {
             logger.error('Error saving sender language profile:', error);
             throw error;
@@ -139,11 +97,9 @@ class SenderLanguageProfileService {
     }
 
     async getSenderProfile(senderEmail) {
-        // Try cache first
         const cached = this.cache.get(`sender_profile:${senderEmail}`);
         if (cached) return cached;
 
-        // If not in cache, get from database
         const db = await connectDB();
         const profile = await db.collection('sender_profiles')
             .findOne({ 'sender.address': senderEmail });

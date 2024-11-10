@@ -29,17 +29,6 @@ function buildAuthenticationObject(auth = {}) {
     };
 }
 
-function buildSecurityMetrics(emailData, isFlagged) {
-    return {
-        totalEmails: 1,
-        suspiciousEmails: isFlagged ? 1 : 0,
-        suspiciousLinkCount: emailData.content?.metrics?.urlMismatches?.length || 0,
-        phishingLinkCount: emailData.security?.flags?.phishingLinks?.length || 0,
-        unwantedSoftwareCount: emailData.security?.flags?.malwareLinks?.length || 0,
-        suspiciousKeywordCount: emailData.security?.flags?.suspiciousPatterns?.length || 0
-    };
-}
-
 export async function saveOrUpdateSenderProfile(emailData) {
     const db = await connectDB();
     const senderEmail = emailData.sender.address;
