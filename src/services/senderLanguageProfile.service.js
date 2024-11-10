@@ -23,7 +23,8 @@ class SenderLanguageProfileService {
             
             // Combine existing emails with new ones for analysis
             const allEmails = senderProfile ? 
-                [...senderProfile.emails, ...emails] : 
+                [...new Set([...senderProfile.emails, ...emails].map(e => e.id))]
+                    .map(id => [...senderProfile.emails, ...emails].find(e => e.id === id)) : 
                 emails;
 
             const profile = {
@@ -42,12 +43,12 @@ class SenderLanguageProfileService {
             let totalWords = 0;
 
             for (const email of allEmails) {
-                if (!email.body) {
-                    logger.warn(`Email ${email.id} has no body content, skipping`);
+                if (!email.content?.cleanedBody) {
+                    logger.warn(`Email ${email.id} has no cleaned body content, skipping`);
                     continue;
                 }
 
-                const doc = nlp.readDoc(email.body);
+                const doc = nlp.readDoc(email.content.cleanedBody);
 
                 // Process sentences
                 const sentences = doc.sentences().out();
@@ -68,12 +69,22 @@ class SenderLanguageProfileService {
 
                 // Process entities
                 const entities = doc.entities().out(its.type);
-                entities.forEach(entity => {
+                const entityText = doc.entities().out(its.detail);
+                entities.forEach((entity, index) => {
                     profile.entityTypes[entity] = (profile.entityTypes[entity] || 0) + 1;
+                    if (!profile.commonEntities[entity]) {
+                        profile.commonEntities[entity] = [];
+                    }
+                    if (!profile.commonEntities[entity].includes(entityText[index])) {
+                        profile.commonEntities[entity].push(entityText[index]);
+                    }
                 });
 
                 // Calculate sentiment using pattern matching instead
-                const suspiciousPatterns = analyzeSuspiciousPatterns(email.body, email.subject);
+                const suspiciousPatterns = analyzeSuspiciousPatterns(
+                    email.content.cleanedBody, 
+                    email.subject
+                );
                 const sentiment = suspiciousPatterns.length ? -1 : 0; // Simple negative/neutral sentiment
                 profile.sentimentTrend.push({
                     timestamp: email.timestamp,
@@ -89,7 +100,7 @@ class SenderLanguageProfileService {
             const tempDoc = nlp.readDoc(Object.keys(profile.wordFrequency).join(' '));
             profile.wordFrequency = Object.fromEntries(
                 Object.entries(profile.wordFrequency)
-                    .filter(([word]) => !tempDoc.tokens().itemAt(0).out(its.stopWordFlag))
+                    .filter(([word]) => word && word.length > 2) // Basic filtering
                     .sort(([,a], [,b]) => b - a)
                     .slice(0, 100)
             );
