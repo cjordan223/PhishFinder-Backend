@@ -1,4 +1,4 @@
-import { saveEmailAnalysis } from '../config/db.js';
+import { saveEmailAnalysis } from '../services/emailAnalysis.service.js';
 import { extractUrlsFromHtml, extractUrlsFromText, checkUrlsWithSafeBrowsing } from '../utils/urlUtils.js';
 import { getEmailAuthenticationDetails } from '../services/dns.service.js';
 import { analyzeSuspiciousPatterns, checkUrlMismatches, extractSpfStatus, extractDmarcPolicy, determineCategory, extractCipherInfo, determineIfResponseRequired } from '../services/analysis.service.js';
@@ -29,7 +29,7 @@ export const analyzeEmail = async (req, res) => {
             throw new Error('Invalid input: email body must be a string');
         }
 
-        // New: Clean and prepare the body text
+        // Clean and prepare the body text
         const cleanedBody = cleanEmailBody(body);
         const readableText = extractReadableText(cleanedBody);
 
@@ -38,7 +38,6 @@ export const analyzeEmail = async (req, res) => {
 
         // Add metrics about the cleaning process
         const textMetrics = getTextMetrics(body, cleanedBody, readableText);
-        
         logger.info(`Text cleaning metrics: ${JSON.stringify(textMetrics)}`);
 
         // 1. Extract URLs from both HTML and text content
@@ -98,10 +97,17 @@ export const analyzeEmail = async (req, res) => {
                     })),
                     safeBrowsingResult: flaggedUrls
                 }
+            },
+            behavioral: {
+                category: determineCategory(labels, subject, cleanedBody),
+                requiresResponse: determineIfResponseRequired(subject, readableText, labels),
+                priority: labels.includes('IMPORTANT') ? 'high' : 'normal',
+                isThread: labels.includes('SENT') || headers.some(h => h.name === 'In-Reply-To'),
+                threadId: headers.find(h => h.name === 'Thread-Index')?.value || null
             }
         };
 
-        // 7. Save to database
+        // 7. Save to database with immediate profile processing
         const emailData = {
             id,
             timestamp: new Date(timestamp),
@@ -151,21 +157,23 @@ export const analyzeEmail = async (req, res) => {
                     cipher: extractCipherInfo(headers)
                 }
             },
-            behavioral: {
-                emailClient: headers.find(h => h.name === 'X-Mailer')?.value || 'unknown',
-                labels: labels || [],
-                category: determineCategory(labels, subject, cleanedBody),
-                importance: labels.includes('IMPORTANT') ? 'high' : 'normal',
-                responseRequired: determineIfResponseRequired(cleanedBody)
-            },
             metadata: {
-                messageId: headers.find(h => h.name === 'Message-ID')?.value,
-                internalDate,
-                sizeEstimate
-            }
+                historyId,
+                internalDate: new Date(parseInt(internalDate)),
+                labels,
+                sizeEstimate,
+                parts: parts?.map(part => ({
+                    mimeType: part.mimeType,
+                    filename: part.filename,
+                    headers: part.headers
+                })) || []
+            },
+            senderProfileProcessed: false,
+            languageProfileProcessed: false
         };
 
-        const resultId = await saveEmailAnalysis(emailData);
+        // Save email and process profiles immediately
+        const resultId = await saveEmailAnalysis(emailData, true);
         logger.info(`Saved to database with ID: ${resultId}`);
 
         // 8. Send response

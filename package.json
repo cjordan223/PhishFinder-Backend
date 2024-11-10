@@ -24,6 +24,10 @@
     "node-fetch": "^3.3.2",
     "psl": "^1.9.0",
     "sanitize-html": "^2.13.1",
+    "url-parse": "^1.5.10",
+    "wink-eng-lite-web-model": "^1.8.0",
+    "wink-nlp": "^2.3.0",
+    "wink-pos-tagger": "^2.2.2",
     "winston": "^3.16.0"
   }
 }

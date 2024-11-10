@@ -1,4 +1,6 @@
 import logger from '../config/logger.js';
+import UrlUtils from './urlUtils.js';
+import { cleanEmailBody, extractReadableText } from './textCleaner.js';
 
 /**
  * Extracts organization name from email domain and content
@@ -8,56 +10,53 @@ import logger from '../config/logger.js';
  */
 function extractOrganization(domain, body) {
     try {
+        const cleanedBody = cleanEmailBody(body);
+        const readableText = extractReadableText(cleanedBody);
+        
         // First check common email service providers
         const commonProviders = [
             'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 
             'aol.com', 'icloud.com', 'protonmail.com'
         ];
         
-        if (commonProviders.includes(domain.toLowerCase())) {
+        if (commonProviders.includes(domain?.toLowerCase())) {
             return null; // Personal email, no organization
         }
 
         // Try to extract from domain first
-        let org = domain
-            .split('.')[0] // Get first part of domain
-            .replace(/(-|_)/g, ' ') // Replace dashes and underscores with spaces
-            .split(/(?=[A-Z])/).join(' ') // Split on camelCase
-            .replace(/\b\w/g, l => l.toUpperCase()); // Capitalize first letter of each word
+        let org = UrlUtils.extractDomain(domain)
+            .split('.')[0]
+            .replace(/[-_]/g, ' ') // Using character class instead of alternation
+            .split(/(?=[A-Z])/).join(' ')
+            .replace(/\b\w/g, l => l.toUpperCase());
 
         // If domain is likely an organization name, return it
         if (org.length > 3 && !commonProviders.includes(domain)) {
-            return org;
+            return cleanOrgName(org);
         }
 
         // Look for common organization indicators in email body
         const orgIndicators = [
-            // Company/org name followed by common department names
             /([A-Z][A-Za-z0-9\s&.,]+)\s+(Corporation|Inc|LLC|Ltd|Company|Department|Team)/,
-            // Common email signature patterns
             /(?:From|Sent from|Regards|Sincerely),?\s*([A-Z][A-Za-z0-9\s&.,]+)/,
-            // Letter head patterns
             /^([A-Z][A-Za-z0-9\s&.,]+)\s+(Headquarters|Office|Building)/m
         ];
 
         for (const pattern of orgIndicators) {
-            const match = body.match(pattern);
-            if (match && match[1]) {
-                // Clean up extracted name
+            const match = readableText?.match(pattern);
+            if (match?.[1]) {
                 const extracted = match[1]
                     .trim()
                     .replace(/\s+/g, ' ')
                     .replace(/[^\w\s&.,]/g, '');
                 
-                // Verify it's a reasonable length and format
                 if (extracted.length > 3 && extracted.length < 50) {
-                    return extracted;
+                    return cleanOrgName(extracted);
                 }
             }
         }
 
-        // If no clear organization found, return domain-based guess
-        return org.length > 3 ? org : null;
+        return org.length > 3 ? cleanOrgName(org) : null;
 
     } catch (err) {
         logger.error('Error extracting organization:', err);
@@ -65,7 +64,11 @@ function extractOrganization(domain, body) {
     }
 }
 
-// Additional helper to clean organization names
+/**
+ * Cleans organization names by removing common suffixes
+ * @param {string} name - Organization name to clean
+ * @returns {string|null} - Cleaned organization name or null
+ */
 function cleanOrgName(name) {
     if (!name) return null;
     
@@ -83,5 +86,4 @@ function cleanOrgName(name) {
     return cleaned.trim();
 }
 
-// Export both functions
 export { extractOrganization, cleanOrgName };
