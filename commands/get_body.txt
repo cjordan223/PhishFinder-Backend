@@ -1,0 +1,6 @@
+mongoexport --uri="mongodb+srv://dev_admin:@.z7nxp.mongodb.net/phishfinder" \
+    --collection=emails \
+    --type=csv \
+    --fields="\"content.cleanedBody\"" \
+    --query='{ "sender.address": "phishfindertestemail@gmail.com" }' \
+    --out=cleaned_bodies.csv

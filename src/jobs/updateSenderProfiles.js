@@ -67,7 +67,7 @@ export async function processUnprocessedEmails() {
                 logger.info(`Processing ${emails.length} emails for sender: ${senderEmail}`);
 
                 // Update sender profile first
-                const senderProfile = await saveOrUpdateSenderProfile(emails[0]);
+                await saveOrUpdateSenderProfile(emails[0]);
                 logger.info(`Updated sender profile for ${senderEmail}`);
 
                 // Explicitly run language analysis

@@ -12,7 +12,6 @@ function extractOrganization(domain, body) {
     try {
         const cleanedBody = cleanEmailBody(body);
         const readableText = extractReadableText(cleanedBody);
-        const domainInfo = UrlUtils.getDomainInfo(domain);
         
         // First check common email service providers
         const commonProviders = [
@@ -20,14 +19,14 @@ function extractOrganization(domain, body) {
             'aol.com', 'icloud.com', 'protonmail.com'
         ];
         
-        if (commonProviders.includes(domain.toLowerCase())) {
+        if (commonProviders.includes(domain?.toLowerCase())) {
             return null; // Personal email, no organization
         }
 
         // Try to extract from domain first
         let org = UrlUtils.extractDomain(domain)
             .split('.')[0]
-            .replace(/(-|_)/g, ' ')
+            .replace(/[-_]/g, ' ') // Using character class instead of alternation
             .split(/(?=[A-Z])/).join(' ')
             .replace(/\b\w/g, l => l.toUpperCase());
 
@@ -44,8 +43,8 @@ function extractOrganization(domain, body) {
         ];
 
         for (const pattern of orgIndicators) {
-            const match = readableText.match(pattern);
-            if (match && match[1]) {
+            const match = readableText?.match(pattern);
+            if (match?.[1]) {
                 const extracted = match[1]
                     .trim()
                     .replace(/\s+/g, ' ')
@@ -65,7 +64,11 @@ function extractOrganization(domain, body) {
     }
 }
 
-// Additional helper to clean organization names
+/**
+ * Cleans organization names by removing common suffixes
+ * @param {string} name - Organization name to clean
+ * @returns {string|null} - Cleaned organization name or null
+ */
 function cleanOrgName(name) {
     if (!name) return null;
     
@@ -83,5 +86,4 @@ function cleanOrgName(name) {
     return cleaned.trim();
 }
 
-// Export both functions
 export { extractOrganization, cleanOrgName };

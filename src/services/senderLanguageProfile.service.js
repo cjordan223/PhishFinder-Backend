@@ -4,6 +4,10 @@ import { connectDB } from '../config/db.js';
 import logger from '../config/logger.js';
 
 const nlp = winkNLP(model);
+const its = nlp.its;
+const as = nlp.as;
+
+const STOP_WORDS = new Set(['the', 'and', 'in', 'of', 'to', 'a', 'is', 'that', 'for', 'it', 'with', 'as', 'by', 'on', 'are', 'at', 'be', 'this', 'was', 'have', 'has', 'from', 'or', 'an', 'they', 'which', 'can', 'also', 'but', 'been', 'their', 'more', 'had', 'when', 'where', 'who', 'will', 'would', 'what', 'there', 'we', 'all', 'no', 'yes', 'than', 'about']);
 
 class SenderLanguageProfileService {
     constructor() {
@@ -42,6 +46,9 @@ class SenderLanguageProfileService {
             let totalSentences = 0;
             let totalWords = 0;
 
+            // Track phrases (3-5 word sequences)
+            const phraseFrequency = {};
+
             for (const email of allEmails) {
                 const emailBody = email.body || email.content?.cleanedBody;
                 if (!emailBody) {
@@ -60,7 +67,34 @@ class SenderLanguageProfileService {
                 words.forEach(word => {
                     languageProfile.wordFrequency[word] = (languageProfile.wordFrequency[word] || 0) + 1;
                 });
+
+                // Extract and count common phrases (3-5 word sequences)
+                for (const sentence of sentences) {
+                    const words = sentence.split(/\s+/);
+                    
+                    // Generate n-grams (phrases of 3-5 words)
+                    for (let n = 3; n <= 5; n++) {
+                        for (let i = 0; i <= words.length - n; i++) {
+                            const phrase = words.slice(i, i + n).join(' ').toLowerCase();
+                            phraseFrequency[phrase] = (phraseFrequency[phrase] || 0) + 1;
+                        }
+                    }
+                }
+
+                // Basic topic analysis using keyword clustering
+                languageProfile.topicAnalysis = this.processTopicAnalysis(doc, languageProfile);
+
+                // Add most common phrases (frequency > 2)
+                languageProfile.commonPhrases = Object.entries(phraseFrequency)
+                    .filter(([_, freq]) => freq > 2)
+                    .map(([phrase, frequency]) => ({
+                        phrase,
+                        frequency
+                    }))
+                    .sort((a, b) => b.frequency - a.frequency)
+                    .slice(0, 20); // Keep top 20 phrases
             }
+
             languageProfile.averageSentenceLength = totalWords / totalSentences;
             logger.info(`Language profile stats for ${senderEmail}:`, {
                 totalEmails: allEmails.length,
@@ -110,6 +144,51 @@ class SenderLanguageProfileService {
         }
 
         return null;
+    }
+
+    processTopicAnalysis(doc, languageProfile) {
+        const topics = new Map();
+        const tokens = doc.tokens();
+        const keywords = tokens
+            .filter((token) => {
+                const text = token.out().toLowerCase();
+                const pos = token.out(its.pos);
+                return (pos === 'noun' || pos === 'verb') && 
+                       !STOP_WORDS.has(text) &&
+                       text.length > 2;
+            })
+            .out();
+        
+        // Group related words by semantic similarity
+        for (const keyword of keywords) {
+            const sentence = doc.tokens()
+                .filter(t => t.parentSentence() === keyword.parentSentence())
+                .out();
+                
+            const related = sentence
+                .filter(word => 
+                    word !== keyword && 
+                    !STOP_WORDS.has(word.toLowerCase()) &&
+                    word.length > 2
+                );
+            
+            if (!topics.has(keyword)) {
+                topics.set(keyword, new Set());
+            }
+            related.forEach(word => topics.get(keyword).add(word));
+        }
+
+        // Convert topics map to array format with better scoring
+        return Array.from(topics.entries())
+            .map(([topic, related]) => ({
+                topic,
+                relatedTerms: Array.from(related),
+                frequency: languageProfile.wordFrequency[topic] || 1,
+                score: (languageProfile.wordFrequency[topic] || 1) * 
+                       (Array.from(related).length + 1)
+            }))
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 15); // Keep top 15 topics
     }
 }
 
