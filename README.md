@@ -146,15 +146,6 @@ Database (MongoDB)
 
 -   Historical analysis
 
-This architecture allows for:
-
--   Scalable email processing
-
--   Real-time analysis
-
--   Secure data handling
-
--   Extensible analysis pipeline
 
 
 
