@@ -4,9 +4,39 @@ Handles API and sensitive data. Email objects are sent to a cloud DB for storage
 
 [Front End Code](https://github.com/cjordan223/PhishFinder/)
 
+## Project Structure
 
-Update with .env or will not work, then run:
+The project is organized as follows:
 
+- **src**: Main source folder containing the core application files.
+  - **__tests__**: Unit tests for various components.
+  - **config**: Configuration files.
+    - `db.js`: Database configuration and connection.
+    - `logger.js`: Logger configuration.
+  - **controllers**: Handles HTTP requests and responses.
+    - `analysis.controller.js`: Controller for analysis endpoints.
+    - `dns.controller.js`: Controller for DNS endpoints.
+    - `metrics.controller.js`: Controller for metrics endpoints.
+    - `whois.controller.js`: Controller for WHOIS endpoints.
+  - **jobs**: Scheduled jobs and background tasks.
+    - `scheduler.js`: Scheduler for running jobs.
+    - `updateSenderProfiles.js`: Job for updating sender profiles.
+  - **middleware**: Middleware functions.
+    - `cors.middleware.js`: Handles CORS.
+  - **routes**: Route definitions for different endpoints.
+    - `analysis.routes.js`, `dns.routes.js`, etc.
+  - **services**: Business logic and application services.
+    - Includes `analysis.service.js`, `cache.service.js`, etc.
+  - **utils**: Utility functions for common operations.
+    - Examples: `emailParser.js`, `urlUtils.js`.
+  - `server.js`: Main server entry point.
+
+- **package.json**: Project metadata and dependencies.
+
+
+
+
+_**^^This needs the .env file added with the secrets/keys/id's added to the root, or it won't run.**_
 ```
 git clone <dir>
 cd <dir>
