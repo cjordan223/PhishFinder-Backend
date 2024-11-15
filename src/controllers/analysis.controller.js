@@ -5,6 +5,7 @@ import { analyzeSuspiciousPatterns, checkUrlMismatches, extractSpfStatus, extrac
 import { cleanEmailBody, extractReadableText, getTextMetrics } from '../utils/textCleaner.js';
 import { extractOrganization, cleanOrgName } from '../utils/emailParser.js';
 import logger from '../config/logger.js';
+import { extractDisplayName, extractDomain } from '../utils/receiverUtils.js';
 
 export const analyzeEmail = async (req, res) => {
     const { 
@@ -118,6 +119,13 @@ export const analyzeEmail = async (req, res) => {
                 replyTo: headers.find(h => h.name === 'Reply-To')?.value || null,
                 organization: extractOrganization(sender.domain, cleanedBody),
                 organizationNormalized: cleanOrgName(extractOrganization(sender.domain, cleanedBody))
+            },
+            receiver: {
+                address: headers.find(h => h.name === 'To')?.value || null,
+                displayName: extractDisplayName(headers.find(h => h.name === 'To')?.value),
+                domain: extractDomain(headers.find(h => h.name === 'To')?.value),
+                cc: headers.find(h => h.name === 'Cc')?.value || null,
+                bcc: headers.find(h => h.name === 'Bcc')?.value || null
             },
             subject,
             content: {

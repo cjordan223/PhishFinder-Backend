@@ -2,6 +2,7 @@ import { connectDB } from '../config/db.js';
 import logger from '../config/logger.js';
 import { cleanEmailBody, extractReadableText } from '../utils/textCleaner.js';
 
+
 // Create helper functions outside the main function
 function createEmailEntry(emailData) {
     return {
@@ -9,6 +10,13 @@ function createEmailEntry(emailData) {
         subject: emailData.subject,
         timestamp: new Date(emailData.timestamp),
         body: extractReadableText(cleanEmailBody(emailData.content?.cleanedBody || '')),
+        receiver: {
+            address: emailData.receiver.address,
+            displayName: emailData.receiver.displayName,
+            domain: emailData.receiver.domain,
+            cc: emailData.receiver.cc,
+            bcc: emailData.receiver.bcc
+        },
         isFlagged: emailData.security?.flags?.safebrowsingFlag || 
                    emailData.security?.flags?.hasSuspiciousPatterns || 
                    emailData.security?.flags?.hasUrlMismatches || false,

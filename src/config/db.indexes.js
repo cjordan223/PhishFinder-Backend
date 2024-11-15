@@ -7,6 +7,8 @@ export async function createIndexes(db) {
       { key: { id: 1 }, unique: true },
       { key: { 'sender.address': 1 } },
       { key: { 'sender.domain': 1 } },
+      { key: { 'receiver.address': 1 } },
+      { key: { 'receiver.domain': 1 } },
       { key: { timestamp: -1 } },
       { key: { senderProfileProcessed: 1 } }
     ]);
