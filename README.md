@@ -38,8 +38,8 @@ The project is organized as follows:
 
 _**^^This needs the .env file added with the secrets/keys/id's added to the root, or it won't run.**_
 ```
-git clone <dir>
-cd <dir>
+git clone https://github.com/cjordan223/PhishFinder-Backend.git
+cd https://github.com/cjordan223/PhishFinder-Backend.git
 npm install
 docker compose up -d
 ```
