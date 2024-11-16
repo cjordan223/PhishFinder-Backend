@@ -58,7 +58,7 @@ class SenderLanguageProfileService {
                         logger.warn(`Email ${email.id} has no body content, skipping`);
                         continue;
                     }
-                    logger.debug(`Analyzing email ${email.id} content`);
+                    // logger.debug(`Analyzing email ${email.id} content`);
                     const doc = nlp.readDoc(emailBody);
                     
                     const sentences = doc.sentences().out();
@@ -83,7 +83,7 @@ class SenderLanguageProfileService {
                     }
                     // Basic topic analysis using keyword clustering
                     languageProfile.topicAnalysis = this.processTopicAnalysis(doc, languageProfile);
-                    logger.debug(`Topic analysis for ${senderEmail}:`, languageProfile.topicAnalysis);
+                    // logger.debug(`Topic analysis for ${senderEmail}:`, languageProfile.topicAnalysis);
                     // Add most common phrases (frequency > 2)
                     languageProfile.commonPhrases = Object.entries(phraseFrequency)
                         .filter(([_, freq]) => freq > 2)
@@ -146,7 +146,7 @@ class SenderLanguageProfileService {
     }
 
         processTopicAnalysis(doc, languageProfile) {
-        logger.debug('Starting processTopicAnalysis');
+        // logger.debug('Starting processTopicAnalysis');
         
         const topics = new Map();
         const tokens = doc.tokens();
@@ -159,14 +159,14 @@ class SenderLanguageProfileService {
                 const text = token.out().toLowerCase();
                 const pos = token.out(its.pos);
                 
-                logger.debug('Token analysis:', {
-                    text,
-                    pos,
-                    isValid: (pos === 'NOUN' || pos === 'VERB' || pos === 'ADJ') && 
-                            !STOP_WORDS.has(text) &&
-                            text.length > 2,
-                    isStopWord: STOP_WORDS.has(text)
-                });
+                // logger.debug('Token analysis:', {
+                //     text,
+                //     pos,
+                //     isValid: (pos === 'NOUN' || pos === 'VERB' || pos === 'ADJ') && 
+                //             !STOP_WORDS.has(text) &&
+                //             text.length > 2,
+                //     isStopWord: STOP_WORDS.has(text)
+                // });
                 
                 return (pos === 'NOUN' || pos === 'VERB' || pos === 'ADJ') && 
                        !STOP_WORDS.has(text) &&
@@ -174,10 +174,10 @@ class SenderLanguageProfileService {
             })
             .out();
 
-        logger.debug('Extracted keywords:', {
-            keywordCount: keywords.length,
-            sampleKeywords: keywords.slice(0, 5)
-        });
+        // logger.debug('Extracted keywords:', {
+        //     keywordCount: keywords.length,
+        //     sampleKeywords: keywords.slice(0, 5)
+        // });
 
         // Group related words by sentence context
         for (const keyword of keywords) {
@@ -222,10 +222,10 @@ class SenderLanguageProfileService {
             .sort((a, b) => b.score - a.score)
             .slice(0, 15);
 
-        logger.debug('Final topic analysis:', {
-            topicsFound: topicAnalysis.length,
-            topTopics: topicAnalysis.slice(0, 3)
-        });
+        // logger.debug('Final topic analysis:', {
+        //     topicsFound: topicAnalysis.length,
+        //     topTopics: topicAnalysis.slice(0, 3)
+        // });
 
         return topicAnalysis;
     }

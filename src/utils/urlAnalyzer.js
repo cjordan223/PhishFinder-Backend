@@ -1,11 +1,9 @@
-import { PhishDetector } from 'phish-detector';
 import { LinkChecker } from 'linkinator';
 import logger from '../config/logger.js';
 import UrlUtils from './urlUtils.js';
 
 class UrlAnalyzer {
     constructor() {
-        this.phishDetector = new PhishDetector();
         this.linkChecker = new LinkChecker();
     }
 
@@ -30,13 +28,6 @@ class UrlAnalyzer {
                 analysis.reasons.push('domain_mismatch');
             }
 
-            // Check for common phishing patterns
-            const phishScore = await this.phishDetector.analyze(href);
-            if (phishScore > 0.7) {
-                analysis.suspicious = true;
-                analysis.reasons.push('phishing_indicators');
-            }
-
             // Check with Safe Browsing API
             const safeBrowsingResults = await UrlUtils.checkUrlsWithSafeBrowsing([href]);
             if (safeBrowsingResults.length > 0) {
@@ -52,6 +43,7 @@ class UrlAnalyzer {
                 analysis.reasons.push('multiple_redirects');
             }
 
+            logger.info('URL analysis result:', analysis);
             return analysis;
 
         } catch (error) {
