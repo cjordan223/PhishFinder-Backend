@@ -1,6 +1,5 @@
-// src/routes/whois.routes.js
 import express from 'express';
-import { getWhoisData } from '../controllers/whois.controller.js';
+import { getWhoisData, postWhoisData } from '../controllers/whois.controller.js';
 
 const router = express.Router();
 
@@ -13,7 +12,7 @@ router.use((req, res, next) => {
 // Support both GET and POST methods
 router.get('/:domain', getWhoisData);
 router.get('/:domain/:emailId', getWhoisData);
-router.post('/:domain', getWhoisData);
-router.post('/:domain/:emailId', getWhoisData);
+router.post('/:domain', postWhoisData);
+router.post('/:domain/:emailId', postWhoisData);
 
 export default router;

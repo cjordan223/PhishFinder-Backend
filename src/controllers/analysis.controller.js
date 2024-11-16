@@ -1,7 +1,8 @@
+// src/controllers/analysis.controller.js
 import { saveEmailAnalysis } from '../services/emailAnalysis.service.js';
-import { extractUrlsFromHtml, extractUrlsFromText, checkUrlsWithSafeBrowsing } from '../utils/urlUtils.js';
+import { extractUrlsFromHtml, extractUrlsFromText, checkUrlsWithSafeBrowsing, detectUrlMismatches } from '../utils/urlUtils.js';
 import { getEmailAuthenticationDetails } from '../services/dns.service.js';
-import { analyzeSuspiciousPatterns, checkUrlMismatches, extractSpfStatus, extractDmarcPolicy, determineCategory, extractCipherInfo, determineIfResponseRequired } from '../services/analysis.service.js';
+import { analyzeSuspiciousPatterns, extractSpfStatus, extractDmarcPolicy, determineCategory, extractCipherInfo, determineIfResponseRequired } from '../services/analysis.service.js';
 import { cleanEmailBody, extractReadableText, getTextMetrics } from '../utils/textCleaner.js';
 import { extractOrganization, cleanOrgName } from '../utils/emailParser.js';
 import logger from '../config/logger.js';
@@ -26,46 +27,50 @@ export const analyzeEmail = async (req, res) => {
     logger.info(`Analyzing email: ${JSON.stringify({ id, sender, subject })}`);
 
     try {
+        // Input validation
         if (typeof body !== 'string') {
             throw new Error('Invalid input: email body must be a string');
         }
 
-        // Clean and prepare the body text
-        const cleanedBody = cleanEmailBody(body);
-        const readableText = extractReadableText(cleanedBody);
+        // Log raw email body for debugging
+        logger.debug(`Raw email body: ${body}`);
 
-        logger.info(`Cleaned body: ${cleanedBody}`);
+        // First get URL mismatches from raw body to preserve HTML structure
+        const urlMismatches = detectUrlMismatches(body);
+        logger.info(`URL mismatches: ${JSON.stringify(urlMismatches)}`);
+
+        // Clean and prepare the body text for other analysis
+        const { preservedHtml, cleanedText } = cleanEmailBody(body);
+        const readableText = extractReadableText(preservedHtml);
+
+        logger.info(`Cleaned body: ${cleanedText}`);
         logger.info(`Readable text: ${readableText}`);
 
-        // Add metrics about the cleaning process
-        const textMetrics = getTextMetrics(body, cleanedBody, readableText);
+        // Get text cleaning metrics
+        const textMetrics = getTextMetrics(body, cleanedText, readableText);
         logger.info(`Text cleaning metrics: ${JSON.stringify(textMetrics)}`);
 
-        // 1. Extract URLs from both HTML and text content
-        const htmlUrls = extractUrlsFromHtml(cleanedBody);
+        // 1. URL Analysis
+        // Extract URLs from both preserved HTML and cleaned text
+        const htmlUrls = extractUrlsFromHtml(preservedHtml);
         const textUrls = extractUrlsFromText(readableText);
         const allUrls = [...new Set([...htmlUrls, ...textUrls])];
         logger.info(`Extracted URLs: ${JSON.stringify(allUrls)}`);
 
-        // 2. SafeBrowsing API setup and check
+        // 2. Safe Browsing Check
         const safeBrowsingApiKey = process.env.SAFE_BROWSING_API_KEY;
         if (!safeBrowsingApiKey) {
             throw new Error('SAFE_BROWSING_API_KEY is not configured');
         }
         
-        const safeBrowsingUrl = `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${safeBrowsingApiKey}`;
-        const flaggedUrls = await checkUrlsWithSafeBrowsing(allUrls, safeBrowsingUrl);
+        const flaggedUrls = await checkUrlsWithSafeBrowsing(allUrls.map(urlObj => urlObj.url));
         logger.info(`Flagged URLs: ${JSON.stringify(flaggedUrls)}`);
 
-        // 3. Check for suspicious patterns
+        // 3. Pattern Analysis
         const suspiciousPatterns = analyzeSuspiciousPatterns(readableText, subject);
         logger.info(`Suspicious patterns: ${JSON.stringify(suspiciousPatterns)}`);
 
-        // 4. Check for URL/link name mismatches
-        const urlMismatches = checkUrlMismatches(body);
-        logger.info(`URL mismatches: ${JSON.stringify(urlMismatches)}`);
-
-        // 5. DNS authentication checks
+        // 4. DNS Authentication
         let dnsRecords = {
             spf: null,
             dkim: null,
@@ -78,7 +83,7 @@ export const analyzeEmail = async (req, res) => {
             logger.info(`DNS records: ${JSON.stringify(dnsRecords)}`);
         }
 
-        // 6. Compile analysis results
+        // 5. Analysis Results
         const analysisResult = {
             security: {
                 authentication: {
@@ -91,16 +96,17 @@ export const analyzeEmail = async (req, res) => {
                     isFlagged: flaggedUrls.length > 0 || suspiciousPatterns.length > 0 || urlMismatches.length > 0,
                     suspiciousKeywords: suspiciousPatterns,
                     linkRisks: allUrls.map(url => ({
-                        url,
-                        isSuspicious: flaggedUrls.some(f => f.url === url),
-                        threatType: flaggedUrls.find(f => f.url === url)?.threatType || null,
-                        mismatch: urlMismatches.find(m => m.url === url)
+                        url: url.url,
+                        isSuspicious: url.suspicious || flaggedUrls.some(f => f.url === url.url),
+                        threatType: flaggedUrls.find(f => f.url === url.url)?.threatType || null,
+                        mismatch: urlMismatches.find(m => m.actualUrl === url.url)
                     })),
-                    safeBrowsingResult: flaggedUrls
+                    safeBrowsingResult: flaggedUrls,
+                    urlMismatches: urlMismatches
                 }
             },
             behavioral: {
-                category: determineCategory(labels, subject, cleanedBody),
+                category: determineCategory(labels, subject, cleanedText),
                 requiresResponse: determineIfResponseRequired(subject, readableText, labels),
                 priority: labels.includes('IMPORTANT') ? 'high' : 'normal',
                 isThread: labels.includes('SENT') || headers.some(h => h.name === 'In-Reply-To'),
@@ -108,7 +114,7 @@ export const analyzeEmail = async (req, res) => {
             }
         };
 
-        // 7. Save to database with immediate profile processing
+        // 6. Prepare Email Data
         const emailData = {
             id,
             timestamp: new Date(timestamp),
@@ -117,8 +123,8 @@ export const analyzeEmail = async (req, res) => {
                 displayName: sender.displayName,
                 domain: sender.domain,
                 replyTo: headers.find(h => h.name === 'Reply-To')?.value || null,
-                organization: extractOrganization(sender.domain, cleanedBody),
-                organizationNormalized: cleanOrgName(extractOrganization(sender.domain, cleanedBody))
+                organization: extractOrganization(sender.domain, cleanedText),
+                organizationNormalized: cleanOrgName(extractOrganization(sender.domain, cleanedText))
             },
             receiver: {
                 address: headers.find(h => h.name === 'To')?.value || null,
@@ -135,7 +141,7 @@ export const analyzeEmail = async (req, res) => {
                     contentType: headers.find(h => h.name === 'Content-Type')?.value,
                     hasHtml: headers.some(h => h.name === 'Content-Type' && h.value.includes('html')),
                     extractedUrls: allUrls,
-                    urlMismatches: allUrls.filter(u => u.suspicious)
+                    urlMismatches: urlMismatches
                 }
             },
             security: {
@@ -158,7 +164,7 @@ export const analyzeEmail = async (req, res) => {
                     hasExternalUrls: allUrls.length > 0,
                     hasMultipleRecipients: headers.some(h => h.name === 'To' && h.value.includes(',')),
                     hasSuspiciousPatterns: suspiciousPatterns.length > 0,
-                    hasUrlMismatches: allUrls.some(u => u.suspicious)
+                    hasUrlMismatches: urlMismatches.length > 0
                 },
                 transportSecurity: {
                     tls: headers.some(h => h.name === 'Received' && h.value.includes('TLS')),
@@ -180,11 +186,11 @@ export const analyzeEmail = async (req, res) => {
             languageProfileProcessed: false
         };
 
-        // Save email and process profiles immediately
+        // 7. Save Email and Process Profiles
         const resultId = await saveEmailAnalysis(emailData, true);
         logger.info(`Saved to database with ID: ${resultId}`);
 
-        // 8. Send response
+        // 8. Send Response
         res.json({
             success: true,
             id: resultId,

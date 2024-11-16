@@ -3,6 +3,7 @@ import fetch from 'node-fetch';
 import { connectDB } from '../config/db.js';
 import { extractRootDomain } from '../services/dns.service.js';
 import logger from '../config/logger.js';
+import { cacheService } from '../services/cache.service.js';
 
 export async function getWhoisData(req, res) {
   const { domain, emailId } = req.params;
@@ -15,19 +16,30 @@ export async function getWhoisData(req, res) {
   logger.info(`[${new Date().toISOString()}] Using root domain for WHOIS lookup: ${rootDomain}`);
 
   try {
-    // Step 1: Fetch WHOIS data using root domain
-    const whoisData = await fetchWhoisData(`http://localhost:8081/${rootDomain}`);
-    logger.info(`[${new Date().toISOString()}] Successfully fetched WHOIS data for ${rootDomain}`);
-    logger.info(`[${new Date().toISOString()}] WHOIS data:`, whoisData);
+    // Check cache first
+    const cacheKey = `whois:${rootDomain}`;
+    let whoisData = cacheService.get(cacheKey);
 
-    // Step 2: Update database if emailId is provided
+    if (!whoisData) {
+      // Fetch WHOIS data using root domain
+      whoisData = await fetchWhoisData(`http://localhost:8081/${rootDomain}`);
+      logger.info(`[${new Date().toISOString()}] Successfully fetched WHOIS data for ${rootDomain}`);
+      logger.info(`[${new Date().toISOString()}] WHOIS data:`, whoisData);
+
+      // Cache the WHOIS data
+      cacheService.set(cacheKey, whoisData);
+    } else {
+      logger.info(`[${new Date().toISOString()}] Cache hit for WHOIS data: ${rootDomain}`);
+    }
+
+    // Update database if emailId is provided
     if (emailId) {
       await updateDatabaseWithWhois(emailId, whoisData);
     } else {
       logger.info(`[${new Date().toISOString()}] No emailId provided - skipping database update`);
     }
 
-    // Step 3: Return response
+    // Return response
     res.json({
       success: true,
       emailId,
@@ -44,7 +56,6 @@ export async function getWhoisData(req, res) {
     });
   }
 }
-
 export async function postWhoisData(req, res) {
   const { domain } = req.body;
   const whoisApiUrl = `http://localhost:8081/${domain}`;

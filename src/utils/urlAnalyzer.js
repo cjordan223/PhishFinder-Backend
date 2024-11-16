@@ -68,6 +68,40 @@ class UrlAnalyzer {
             return [];
         }
     }
+
+    async analyzeEmailBody(emailBody) {
+        try {
+            const urlsFromText = UrlUtils.extractUrlsFromText(emailBody);
+            const urlsFromHtml = UrlUtils.extractUrlsFromHtml(emailBody);
+            const allUrls = [...urlsFromText, ...urlsFromHtml];
+
+            const flaggedUrls = [];
+            const suspiciousPatterns = [];
+            const urlMismatches = UrlUtils.detectUrlMismatches(emailBody);
+
+            for (const urlObj of allUrls) {
+                const analysis = await this.analyzeUrl(urlObj.url, urlObj.url);
+                if (analysis.suspicious) {
+                    flaggedUrls.push(analysis);
+                }
+            }
+
+            logger.info('Extracted URLs:', allUrls);
+            logger.info('Flagged URLs:', flaggedUrls);
+            logger.info('Suspicious patterns:', suspiciousPatterns);
+            logger.info('URL mismatches:', urlMismatches);
+
+            return {
+                extractedUrls: allUrls,
+                flaggedUrls,
+                suspiciousPatterns,
+                urlMismatches
+            };
+        } catch (error) {
+            logger.error('Error analyzing email body:', error);
+            return null;
+        }
+    }
 }
 
 export const urlAnalyzer = new UrlAnalyzer();

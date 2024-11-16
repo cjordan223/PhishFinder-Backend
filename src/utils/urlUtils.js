@@ -1,14 +1,17 @@
+// src/utils/urlUtils.js
+import * as cheerio from 'cheerio';
 import URLParse from 'url-parse';
-import psl from 'psl';
 import fetch from 'node-fetch';
+import psl from 'psl';
 import logger from '../config/logger.js';
+import urlRegexSafe from 'url-regex-safe';
+import ipRegex from 'ip-regex';
 
 export function parseUrl(urlString) {
     try {
         if (!urlString.startsWith('http')) {
             urlString = 'https://' + urlString;
         }
-        
         const parsed = new URLParse(urlString);
         return {
             full: parsed.href,
@@ -26,6 +29,9 @@ export function parseUrl(urlString) {
 
 export function extractDomain(hostname) {
     try {
+        if (ipRegex({exact: true}).test(hostname)) {
+            return hostname;
+        }
         const parsed = psl.parse(hostname);
         return parsed.domain || hostname;
     } catch (error) {
@@ -36,6 +42,10 @@ export function extractDomain(hostname) {
 
 export function normalizeUrl(url) {
     try {
+        if (typeof url !== 'string') {
+            return '';
+        }
+        
         url = url.trim()
             .replace(/['"<>]/g, '')
             .split(/[|\s]/)[0]
@@ -57,88 +67,128 @@ export function normalizeUrl(url) {
 export function isValidUrl(url) {
     try {
         new URL(url);
-        return true;
+        const hostname = new URL(url).hostname;
+        return psl.isValid(hostname) || ipRegex().test(hostname);
     } catch (error) {
-        logger.error('Invalid URL:', error);
         return false;
     }
 }
 
 export function looksLikeUrl(text) {
-    const urlPattern = /^(https?:\/\/)?[\w\-.]+(\.[\w\-.]+)+[^\s]*$/i;
+    const urlPattern = /^(https?:\/\/)?([\w\-.]+\.[a-z]{2,}|(?:\d{1,3}\.){3}\d{1,3})(:\d+)?([/?#].*)?$/i;
     return urlPattern.test(text);
 }
 
 export function isValidDomain(domain) {
-    return psl.isValid(domain);
+    return ipRegex().test(domain) || psl.isValid(domain);
 }
 
 export function getDomainInfo(url) {
     try {
         const hostname = url.replace(/^(https?:\/\/)?(www\.)?/, '');
+        
+        if (ipRegex().test(hostname)) {
+            return {
+                domain: hostname,
+                subdomain: null,
+                tld: null,
+                listed: false,
+                isIP: true
+            };
+        }
+
         const parsed = psl.parse(hostname);
         return {
             domain: parsed.domain,
             subdomain: parsed.subdomain,
             tld: parsed.tld,
-            listed: parsed.listed
+            listed: parsed.listed,
+            isIP: false
         };
     } catch (error) {
         logger.error('Error getting domain info:', error);
         return {
-            domain: hostname,
+            domain: url,
             subdomain: null,
             tld: null,
-            listed: false
+            listed: false,
+            isIP: false
         };
     }
 }
 
 export function detectUrlMismatches(htmlContent) {
-    const mismatches = [];
-    const anchorRegex = /<a[^>]+href=["']([^"']+)["'][^>]*>([^<]+)<\/a>/g;
-    let match;
-    
-    while ((match = anchorRegex.exec(htmlContent)) !== null) {
-        const href = match[1].trim();
-        const displayText = match[2].trim();
-        
-        if (looksLikeUrl(displayText)) {
-            const normalizedHref = extractDomain(normalizeUrl(href));
-            const normalizedDisplay = extractDomain(normalizeUrl(displayText));
-            
-            if (normalizedHref !== normalizedDisplay) {
-                mismatches.push({
-                    displayedUrl: displayText,
-                    actualUrl: href,
-                    suspicious: true
-                });
+    try {
+        const $ = cheerio.load(htmlContent);
+        const mismatches = [];
+
+        // Find all text nodes that contain URLs
+        $('*').contents().filter(function() {
+            return this.type === 'text' && this.data.includes('http');
+        }).each(function() {
+            const urlMatch = this.data.match(/(https?:\/\/[^\s<>]+)/);
+            if (urlMatch) {
+                const displayUrl = urlMatch[1];
+                const $parent = $(this).parent('a');
+                if ($parent.length) {
+                    const href = $parent.attr('href');
+                    if (href && href !== displayUrl) {
+                        try {
+                            const displayDomain = new URL(displayUrl).hostname;
+                            const hrefDomain = new URL(href).hostname;
+                            if (displayDomain !== hrefDomain) {
+                                mismatches.push({
+                                    displayedUrl: displayUrl,
+                                    actualUrl: href,
+                                    displayDomain,
+                                    actualDomain: hrefDomain,
+                                    suspicious: true
+                                });
+                            }
+                        } catch (e) {
+                            logger.error('Error parsing URL:', e);
+                        }
+                    }
+                }
             }
-        }
+        });
+
+        return mismatches;
+    } catch (error) {
+        logger.error('Error detecting URL mismatches:', error);
+        return [];
     }
-    
-    return mismatches;
 }
 
 export function extractUrlsFromHtml(htmlContent) {
     try {
-        const hrefRegex = /href=["'](https?:\/\/[^"']+)["']/g;
-        const hrefMatches = [...htmlContent.matchAll(hrefRegex)].map(match => match[1]);
-        
-        const anchorRegex = />https?:\/\/[^<\s]+</g;
-        const anchorMatches = [...htmlContent.matchAll(anchorRegex)]
-            .map(match => match[0].slice(1, -1));
-        
-        const mismatches = detectUrlMismatches(htmlContent);
-        
-        const allUrls = [...new Set([...hrefMatches, ...anchorMatches])]
-            .map(url => ({
-                url: normalizeUrl(url),
-                suspicious: false
-            }))
-            .filter(urlObj => isValidUrl(urlObj.url));
+        const $ = cheerio.load(htmlContent);
+        const urls = new Set();
 
-        return [...allUrls, ...mismatches];
+        // Extract URLs from href attributes
+        $('a[href]').each((_, element) => {
+            const href = $(element).attr('href');
+            if (href && isValidUrl(href)) {
+                urls.add(normalizeUrl(href));
+            }
+        });
+
+        // Extract URLs from text content
+        const textContent = $.text();
+        const textUrls = extractUrlsFromText(textContent);
+        textUrls.forEach(({url}) => urls.add(url));
+
+        return Array.from(urls).map(url => {
+            try {
+                const hostname = new URL(url).hostname;
+                return {
+                    url,
+                    suspicious: ipRegex().test(hostname)
+                };
+            } catch (error) {
+                return { url, suspicious: false };
+            }
+        });
     } catch (error) {
         logger.error('Error extracting URLs from HTML:', error);
         return [];
@@ -151,14 +201,25 @@ export function extractUrlsFromText(text) {
             logger.error('extractUrlsFromText received non-string input:', typeof text);
             return [];
         }
-        
-        const urlRegex = /(https?:\/\/[^\s<>"]+)/g;
-        const matches = text.match(urlRegex) || [];
-        
-        return matches.map(url => ({
-            url: normalizeUrl(url),
-            suspicious: false
-        })).filter(urlObj => isValidUrl(urlObj.url));
+
+        const urlPattern = urlRegexSafe({ strict: true, ipv4: true });
+        const matches = text.match(urlPattern) || [];
+
+        return matches.map(url => {
+            try {
+                const normalizedUrl = normalizeUrl(url);
+                const hostname = new URL(normalizedUrl).hostname;
+                return {
+                    url: normalizedUrl,
+                    suspicious: ipRegex().test(hostname)
+                };
+            } catch (error) {
+                return {
+                    url,
+                    suspicious: false
+                };
+            }
+        }).filter(({url}) => isValidUrl(url));
     } catch (error) {
         logger.error('Error extracting URLs from text:', error);
         return [];
@@ -200,7 +261,6 @@ export async function checkUrlsWithSafeBrowsing(urls) {
     }
 }
 
-// For backward compatibility with existing imports
 export default {
     parseUrl,
     extractDomain,
