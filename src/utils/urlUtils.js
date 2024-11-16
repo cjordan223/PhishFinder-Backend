@@ -1,4 +1,3 @@
-// src/utils/urlUtils.js
 import URLParse from 'url-parse';
 import psl from 'psl';
 import fetch from 'node-fetch';
@@ -49,7 +48,8 @@ export function normalizeUrl(url) {
 
         const parsed = new URL(url);
         return parsed.href;
-    } catch {
+    } catch (error) {
+        logger.error('URL normalization error:', error);
         return url.toLowerCase();
     }
 }
@@ -58,7 +58,8 @@ export function isValidUrl(url) {
     try {
         new URL(url);
         return true;
-    } catch {
+    } catch (error) {
+        logger.error('Invalid URL:', error);
         return false;
     }
 }

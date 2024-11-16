@@ -1,12 +1,22 @@
-// src/services/dns-service.js
-
-// Helper functions to fetch the email security info from the DNS records
-
 import dns from 'dns';
 import logger from '../config/logger.js';
 import { cacheService } from './cache.service.js';
 import UrlUtils from '../utils/urlUtils.js';
 
+// Remove the reverse DNS lookup function
+// async function performReverseDnsLookup(ip) {
+//     try {
+//         const hostnames = await dns.promises.reverse(ip);
+//         logger.info(`Reverse DNS lookup for IP ${ip}:`, hostnames);
+//         return hostnames;
+//     } catch (error) {
+//         logger.error(`Error performing reverse DNS lookup for IP ${ip}:`, error);
+//         return [];
+//     }
+// }
+
+// Remove or comment out the function call
+// const hostnames = await performReverseDnsLookup(ip);
 
 async function getSPFRecord(domain) {
   const cacheKey = `spf:${domain}`;
