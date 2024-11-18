@@ -5,55 +5,59 @@ import { extractRootDomain } from '../services/dns.service.js';
 import logger from '../config/logger.js';
 import { cacheService } from '../services/cache.service.js';
 
+// src/controllers/whois.controller.js
 export async function getWhoisData(req, res) {
   const { domain, emailId } = req.params;
-  const method = req.method;
-  
-  // Extract root domain for WHOIS lookup
   const rootDomain = extractRootDomain(domain);
   
-  logger.info(`[${new Date().toISOString()}] Incoming ${method} request to /whois/${domain}${emailId ? `/${emailId}` : ''}`);
-  logger.info(`[${new Date().toISOString()}] Using root domain for WHOIS lookup: ${rootDomain}`);
+  logger.info(`Using root domain for WHOIS lookup: ${rootDomain}`);
 
   try {
-    // Check cache first
-    const cacheKey = `whois:${rootDomain}`;
-    let whoisData = cacheService.get(cacheKey);
+    // First check MongoDB cache
+    const db = await connectDB();
+    const whoisCollection = db.collection('whois');
+    
+    // Look for cached entry that's less than 30 days old
+    const cachedWhois = await whoisCollection.findOne({
+      domain: rootDomain,
+      createdAt: { 
+        $gt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) 
+      }
+    });
 
-    if (!whoisData) {
-      // Fetch WHOIS data using root domain
-      whoisData = await fetchWhoisData(`http://localhost:8081/${rootDomain}`);
-      logger.info(`[${new Date().toISOString()}] Successfully fetched WHOIS data for ${rootDomain}`);
-      logger.info(`[${new Date().toISOString()}] WHOIS data:`, whoisData);
-
-      // Cache the WHOIS data
-      cacheService.set(cacheKey, whoisData);
+    let whoisData;
+    if (cachedWhois) {
+      logger.info(`Found cached WHOIS data for ${rootDomain}`);
+      whoisData = cachedWhois.data;
     } else {
-      logger.info(`[${new Date().toISOString()}] Cache hit for WHOIS data: ${rootDomain}`);
+      // Fetch from WHOIS API if not in DB
+      whoisData = await fetchWhoisData(`http://localhost:8081/${rootDomain}`);
+      
+      // Store in MongoDB
+      await whoisCollection.insertOne({
+        domain: rootDomain,
+        data: whoisData,
+        createdAt: new Date()
+      });
+      
+      logger.info(`Cached new WHOIS data for ${rootDomain}`);
     }
 
-    // Update database if emailId is provided
+    // Update email if emailId provided
     if (emailId) {
       await updateDatabaseWithWhois(emailId, whoisData);
-    } else {
-      logger.info(`[${new Date().toISOString()}] No emailId provided - skipping database update`);
     }
 
-    // Return response
     res.json({
       success: true,
       emailId,
-      originalDomain: domain,
       rootDomain,
       whoisData
     });
+
   } catch (error) {
-    logger.error(`[${new Date().toISOString()}] Error processing WHOIS data:`, error);
-    res.status(500).json({ 
-      error: 'Error processing WHOIS data',
-      originalDomain: domain,
-      rootDomain
-    });
+    logger.error('Error processing WHOIS data:', error);
+    res.status(500).json({ error: 'Error processing WHOIS data' });
   }
 }
 export async function postWhoisData(req, res) {

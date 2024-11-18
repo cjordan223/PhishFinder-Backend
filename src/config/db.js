@@ -1,6 +1,8 @@
 import { MongoClient } from 'mongodb';
 import dotenv from 'dotenv';
 import { createIndexes } from './db.indexes.js';
+import { getEmailAuthenticationDetails } from '../services/dns.service.js';
+import logger from '../config/logger.js';
 
 dotenv.config();
 
@@ -23,10 +25,10 @@ export async function connectDB() {
     client = await MongoClient.connect(uri, options);
     db = client.db('phishfinder');
     await createIndexes(db);
-    console.log('Connected to MongoDB with connection pooling');
+    logger.info('Connected to MongoDB with connection pooling');
     return db;
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    logger.error('MongoDB connection error:', error);
     throw error;
   }
 }
@@ -36,21 +38,34 @@ export async function disconnectDB() {
     await client.close();
     client = null;
     db = null;
-    console.log('Disconnected from MongoDB');
+    logger.info('Disconnected from MongoDB');
   }
 }
 
 export async function saveEmailAnalysis(emailData, processProfileImmediately = true) {
   const db = await connectDB();
   const emailsCollection = db.collection('emails');
+  const authCollection = db.collection('domain_authentication');
   
   try {
     const existingEmail = await emailsCollection.findOne({ id: emailData.id });
     
     if (existingEmail) {
-      console.log(`Email with id ${emailData.id} already exists. Skipping insertion.`);
+      logger.auth(`Email with id ${emailData.id} already exists. Skipping insertion.`);
       return existingEmail._id;
     }
+
+    // Fetch domain authentication details
+    const domainAuthentication = await getEmailAuthenticationDetails(emailData.sender.domain);
+    logger.auth('Domain Authentication Details:', domainAuthentication);
+
+    // Save domain authentication details to the separate collection
+    const authResult = await authCollection.insertOne({
+      domain: emailData.sender.domain,
+      authentication: domainAuthentication,
+      createdAt: new Date()
+    });
+    logger.auth('Domain Authentication Saved:', { insertedId: authResult.insertedId });
 
     const emailDataWithNull = {
       ...emailData,
@@ -60,11 +75,12 @@ export async function saveEmailAnalysis(emailData, processProfileImmediately = t
       },
       whoisLastUpdated: null,
       senderProfileProcessed: false,
-      languageProfileProcessed: false
+      languageProfileProcessed: false,
+      domain_authentication_id: authResult.insertedId
     };
 
     const result = await emailsCollection.insertOne(emailDataWithNull);
-    console.log('Email analysis saved:', result.insertedId);
+    logger.auth('Email analysis saved:', { insertedId: result.insertedId });
 
     if (processProfileImmediately) {
       try {
@@ -80,14 +96,14 @@ export async function saveEmailAnalysis(emailData, processProfileImmediately = t
           }
         );
       } catch (profileError) {
-        console.error('Error processing sender profile:', profileError);
+        logger.auth('Error processing sender profile:', profileError);
       }
     }
 
     return result.insertedId;
 
   } catch (error) {
-    console.error('Error saving email analysis:', error);
+    logger.auth('Error saving email analysis:', error);
     throw error;
   }
 }
