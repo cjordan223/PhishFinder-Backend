@@ -13,13 +13,12 @@ export async function createIndexes(db) {
       { key: { senderProfileProcessed: 1 } }
     ]);
 
-    // First, clean up any duplicate sender profiles
+    // Clean duplicates and create sender profiles indexes
     const duplicates = await findAndCleanDuplicateSenderProfiles(db);
     if (duplicates > 0) {
       logger.info(`Cleaned up ${duplicates} duplicate sender profiles`);
     }
 
-    // Then create sender profiles indexes
     await db.collection('sender_profiles').createIndexes([
       { 
         key: { 'sender.address': 1 },
@@ -37,10 +36,21 @@ export async function createIndexes(db) {
       { key: { createdAt: -1 } }
     ]);
 
+    // Domain authentication collection indexes
+    await db.collection('domain_authentication').createIndexes([
+      { 
+        key: { domain: 1, createdAt: -1 }, 
+        unique: true,
+        background: true 
+      },
+      { key: { 'authentication.spf.status': 1 } },
+      { key: { 'authentication.dkim.status': 1 } },
+      { key: { 'authentication.dmarc.policy': 1 } }
+    ]);
+
     logger.info('Database indexes created successfully');
   } catch (error) {
     logger.error('Error creating database indexes:', error);
-    // Don't throw the error - allow the application to continue
     logger.warn('Continuing without all indexes...');
   }
 }
@@ -77,3 +87,4 @@ async function findAndCleanDuplicateSenderProfiles(db) {
 
   return cleanedCount;
 } 
+

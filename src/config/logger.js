@@ -1,6 +1,7 @@
-// src/config/logger.js
-import { createLogger, format, transports } from 'winston';
+import winston from 'winston';
+const { createLogger, format, transports } = winston;
 
+// Add new transport for Safe Browsing logs
 const logger = createLogger({
   level: process.env.LOG_LEVEL || 'debug',
   format: format.combine(
@@ -29,18 +30,19 @@ const logger = createLogger({
       level: 'error'
     }),
     new transports.File({
-      filename: 'logs/debug.log',
+      filename: 'logs/debug.log', 
       level: 'debug'
     }),
     new transports.File({
       filename: 'logs/combined.log',
       level: 'debug'
     }),
+    // Add new transport for Safe Browsing logs
     new transports.File({
-      filename: 'logs/auth.log',
+      filename: 'logs/safebrowsing.log',
       level: 'debug',
       format: format.combine(
-        format.label({ label: 'AUTH_LOG' }),
+        format.label({ label: 'SAFE_BROWSING' }),
         format.printf(({ timestamp, level, message, label, ...meta }) => {
           let log = `${timestamp} [${label}] [${level}]: ${message}`;
           if (Object.keys(meta).length) {
@@ -53,15 +55,12 @@ const logger = createLogger({
   ]
 });
 
-logger.debugWithContext = (message, context) => {
-  logger.debug(message, { context: JSON.stringify(context, null, 2) });
-};
-
-logger.auth = (message, meta) => {
+// Add helper method for Safe Browsing logs
+logger.safeBrowsing = (message, meta) => {
   logger.log({
     level: 'debug',
     message,
-    label: 'AUTH_LOG',
+    label: 'SAFE_BROWSING',
     ...meta
   });
 };

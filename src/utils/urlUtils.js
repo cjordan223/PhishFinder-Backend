@@ -230,9 +230,11 @@ export async function checkUrlsWithSafeBrowsing(urls) {
     try {
         const API_KEY = process.env.SAFE_BROWSING_API_KEY;
         if (!API_KEY) {
-            logger.error('Missing Google Safe Browsing API key');
-            return [];
+            logger.safeBrowsing('Missing Google Safe Browsing API key');
+            return urls.map(url => ({ url, suspicious: false }));
         }
+
+        logger.safeBrowsing('Checking URLs with Safe Browsing API', { urlCount: urls.length });
 
         const response = await fetch(`https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${API_KEY}`, {
             method: 'POST',
@@ -254,10 +256,31 @@ export async function checkUrlsWithSafeBrowsing(urls) {
         });
 
         const data = await response.json();
-        return data.matches || [];
+        
+        // Create a map of threatened URLs
+        const threatenedUrls = new Set(
+            (data.matches || []).map(match => match.threat.url)
+        );
+
+        const results = urls.map(url => ({
+            url,
+            suspicious: threatenedUrls.has(url)
+        }));
+
+        logger.safeBrowsing('Safe Browsing API check completed', {
+            checkedUrls: urls.length,
+            threatenedUrls: threatenedUrls.size,
+            results
+        });
+
+        return results;
+
     } catch (error) {
-        logger.error('Error checking URLs with Safe Browsing:', error);
-        return [];
+        logger.safeBrowsing('Error checking URLs with Safe Browsing', {
+            error: error.message,
+            stack: error.stack
+        });
+        return urls.map(url => ({ url, suspicious: false }));
     }
 }
 
