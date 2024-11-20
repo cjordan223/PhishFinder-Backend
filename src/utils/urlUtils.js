@@ -6,6 +6,8 @@ import psl from 'psl';
 import logger from '../config/logger.js';
 import urlRegexSafe from 'url-regex-safe';
 import ipRegex from 'ip-regex';
+import validator from 'validator';
+
 
 export function parseUrl(urlString) {
     try {
@@ -122,19 +124,39 @@ export function detectUrlMismatches(htmlContent) {
         const $ = cheerio.load(htmlContent);
         const mismatches = [];
 
-        // Find all anchor tags with href attributes
         $('a[href]').each((index, element) => {
-            const displayedUrl = $(element).text().trim();
+            const displayedText = $(element).text().trim();
             const actualUrl = $(element).attr('href').trim();
 
-            if (displayedUrl && actualUrl) {
+            if (displayedText && actualUrl) {
                 try {
-                    const displayDomain = new URL(displayedUrl).hostname;
-                    const actualDomain = new URL(actualUrl).hostname;
+                    let displayDomain = '';
+                    let actualDomain = '';
 
+                    // Check if displayedText is a URL
+                    if (validator.isURL(displayedText, { require_protocol: true })) {
+                        displayDomain = new URL(displayedText).hostname;
+                    }
+                    // Check if displayedText is an email
+                    else if (validator.isEmail(displayedText)) {
+                        displayDomain = displayedText.split('@')[1];
+                    } else {
+                        // Skip if displayedText is neither a URL nor an email
+                        return;
+                    }
+
+                    // Parse actualUrl
+                    if (actualUrl.startsWith('mailto:')) {
+                        const email = actualUrl.replace('mailto:', '');
+                        actualDomain = email.split('@')[1];
+                    } else {
+                        actualDomain = new URL(actualUrl).hostname;
+                    }
+
+                    // Compare domains
                     if (displayDomain !== actualDomain) {
                         mismatches.push({
-                            displayedUrl,
+                            displayedUrl: displayedText,
                             actualUrl,
                             displayDomain,
                             actualDomain,
