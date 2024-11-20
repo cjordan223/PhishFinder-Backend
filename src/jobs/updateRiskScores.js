@@ -1,5 +1,5 @@
 import { connectDB } from '../config/db.js';
-import { calculateRiskScore } from '../services/analysis.service.js';
+import { riskScoreService } from '../services/riskScore.service.js';
 import logger from '../config/logger.js';
 
 export async function updateRiskScores() {
@@ -19,7 +19,7 @@ export async function updateRiskScores() {
         let updatedCount = 0;
         for (const email of unprocessedEmails) {
             try {
-                const riskScore = calculateRiskScore(email);
+                const riskScore = riskScoreService.calculateRiskScore(email);
                 await db.collection('emails').updateOne(
                     { _id: email._id },
                     { 

@@ -200,31 +200,4 @@ export function determineIfResponseRequired(body) {
   );
 }
 
-// Add to src/services/analysis.service.js
-export function calculateRiskScore(emailData) {
-  let score = 0;
-  
-  // Authentication checks (0-30 points)
-  const auth = emailData.security?.authentication;
-  if (auth) {
-      if (auth.spf?.status === 'fail') score += 10;
-      if (auth.dkim?.status === 'fail') score += 10;
-      if (auth.dmarc?.policy === 'none') score += 10;
-  }
-
-  // URL/Link analysis (0-30 points)
-  if (emailData.security?.flags) {
-      if (emailData.security.flags.safebrowsingFlag) score += 15;
-      if (emailData.security.flags.hasUrlMismatches) score += 10;
-      if (emailData.security.flags.hasExternalUrls) score += 5;
-  }
-
-  // Content analysis (0-40 points)
-  const patterns = emailData.security?.analysis?.suspiciousKeywords || [];
-  score += Math.min(patterns.length * 5, 20); // Cap at 20 points
-
-  if (emailData.security?.flags?.hasMultipleRecipients) score += 10;
-  if (emailData.behavioral?.requiresResponse) score += 10;
-
-  return Math.min(score, 100); // Cap total score at 100
-}
+ 

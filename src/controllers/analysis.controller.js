@@ -7,6 +7,7 @@ import { cleanEmailBody, extractReadableText, getTextMetrics } from '../utils/te
 import { extractOrganization, cleanOrgName } from '../utils/emailParser.js';
 import logger from '../config/logger.js';
 import { extractDisplayName, extractDomain } from '../utils/receiverUtils.js';
+import { connectDB } from '../config/db.js';
 
 export const analyzeEmail = async (req, res) => {
     const { 
@@ -14,6 +15,7 @@ export const analyzeEmail = async (req, res) => {
         sender, 
         subject, 
         body, 
+        htmlBody,  // New field added for URL parsing
         timestamp,
         headers,
         parts,
@@ -34,13 +36,15 @@ export const analyzeEmail = async (req, res) => {
 
         // Log raw email body for debugging
         logger.debug(`Raw email body: ${body}`);
+        // Log the entire incoming payload
+        logger.debug(`Incoming payload: ${JSON.stringify(req.body)}`);
 
         // First get URL mismatches from raw body to preserve HTML structure
-        const urlMismatches = detectUrlMismatches(body);
+        const urlMismatches = detectUrlMismatches(htmlBody || body);
         logger.info(`URL mismatches: ${JSON.stringify(urlMismatches)}`);
 
         // Clean and prepare the body text for other analysis
-        const { preservedHtml, cleanedText } = cleanEmailBody(body);
+        const { preservedHtml, cleanedText } = cleanEmailBody(htmlBody || body);
         const readableText = extractReadableText(preservedHtml);
 
         logger.info(`Cleaned body: ${cleanedText}`);
@@ -64,7 +68,18 @@ export const analyzeEmail = async (req, res) => {
         }
         
         const flaggedUrls = await checkUrlsWithSafeBrowsing(allUrls.map(urlObj => urlObj.url));
+
+        // Update each URL object with its safe browsing result
+        const updatedUrls = allUrls.map(urlObj => {
+            const safetyResult = flaggedUrls.find(f => f.url === urlObj.url);
+            return {
+                ...urlObj,
+                suspicious: safetyResult?.suspicious || false
+            };
+        });
+
         logger.info(`Flagged URLs: ${JSON.stringify(flaggedUrls)}`);
+        logger.info(`Updated URLs: ${JSON.stringify(updatedUrls)}`);
 
         // 3. Pattern Analysis
         const suspiciousPatterns = analyzeSuspiciousPatterns(readableText, subject);
@@ -84,7 +99,6 @@ export const analyzeEmail = async (req, res) => {
         }
 
         // 5. Analysis Results
-        // In analyzeEmail function, modify the analysisResult object:
         const analysisResult = {
             security: {
                 authentication: {
@@ -92,19 +106,25 @@ export const analyzeEmail = async (req, res) => {
                     dkim: dnsRecords.dkim,
                     dmarc: dnsRecords.dmarc,
                     summary: dnsRecords.summary
-                    // Remove riskScore from here since it's handled by the background job
                 },
                 analysis: {
-                    isFlagged: flaggedUrls.length > 0 || suspiciousPatterns.length > 0 || urlMismatches.length > 0,
-                    suspiciousKeywords: suspiciousPatterns,
-                    linkRisks: allUrls.map(url => ({
+                    isFlagged: flaggedUrls.length > 0 || suspiciousPatterns.length > 0,
+                    linkRisks: updatedUrls.map(url => ({
                         url: url.url,
-                        isSuspicious: url.suspicious || flaggedUrls.some(f => f.url === url.url),
-                        threatType: flaggedUrls.find(f => f.url === url.url)?.threatType || null,
-                        mismatch: urlMismatches.find(m => m.actualUrl === url.url)
+                        isSuspicious: url.suspicious
                     })),
-                    safeBrowsingResult: flaggedUrls,
-                    urlMismatches: urlMismatches
+                    safeBrowsingResults: {
+                        checkedUrls: flaggedUrls.length,
+                        threatenedUrls: flaggedUrls.filter(u => u.suspicious).length,
+                        results: flaggedUrls
+                    }
+                },
+                flags: {
+                    safebrowsingFlag: flaggedUrls.some(u => u.suspicious),
+                    hasExternalUrls: updatedUrls.length > 0,
+                    hasMultipleRecipients: headers.some(h => h.name === 'To' && h.value.includes(',')),
+                    hasSuspiciousPatterns: suspiciousPatterns.length > 0,
+                    hasUrlMismatches: urlMismatches.length > 0
                 }
             },
             behavioral: {
@@ -113,6 +133,16 @@ export const analyzeEmail = async (req, res) => {
                 priority: labels.includes('IMPORTANT') ? 'high' : 'normal',
                 isThread: labels.includes('SENT') || headers.some(h => h.name === 'In-Reply-To'),
                 threadId: headers.find(h => h.name === 'Thread-Index')?.value || null
+            },
+            content: {
+                cleanedBody: readableText,
+                metrics: {
+                    ...textMetrics,
+                    contentType: headers.find(h => h.name === 'Content-Type')?.value,
+                    hasHtml: headers.some(h => h.name === 'Content-Type' && h.value.includes('html')),
+                    extractedUrls: updatedUrls,
+                    urlMismatches
+                }
             }
         };
 
@@ -142,8 +172,8 @@ export const analyzeEmail = async (req, res) => {
                     ...textMetrics,
                     contentType: headers.find(h => h.name === 'Content-Type')?.value,
                     hasHtml: headers.some(h => h.name === 'Content-Type' && h.value.includes('html')),
-                    extractedUrls: allUrls,
-                    urlMismatches: urlMismatches
+                    extractedUrls: updatedUrls,
+                    urlMismatches
                 }
             },
             security: {
@@ -163,7 +193,7 @@ export const analyzeEmail = async (req, res) => {
                 },
                 flags: {
                     safebrowsingFlag: flaggedUrls.length > 0,
-                    hasExternalUrls: allUrls.length > 0,
+                    hasExternalUrls: updatedUrls.length > 0,
                     hasMultipleRecipients: headers.some(h => h.name === 'To' && h.value.includes(',')),
                     hasSuspiciousPatterns: suspiciousPatterns.length > 0,
                     hasUrlMismatches: urlMismatches.length > 0
@@ -187,6 +217,15 @@ export const analyzeEmail = async (req, res) => {
             senderProfileProcessed: false,
             languageProfileProcessed: false
         };
+
+        // Connect to the database
+        const db = await connectDB();
+
+        // Save the analysis result to the database
+        await db.collection('emails').updateOne(
+            { id: emailData.id },
+            { $set: analysisResult }
+        );
 
         // 7. Save Email and Process Profiles
         const resultId = await saveEmailAnalysis(emailData, true);

@@ -122,33 +122,27 @@ export function detectUrlMismatches(htmlContent) {
         const $ = cheerio.load(htmlContent);
         const mismatches = [];
 
-        // Find all text nodes that contain URLs
-        $('*').contents().filter(function() {
-            return this.type === 'text' && this.data.includes('http');
-        }).each(function() {
-            const urlMatch = this.data.match(/(https?:\/\/[^\s<>]+)/);
-            if (urlMatch) {
-                const displayUrl = urlMatch[1];
-                const $parent = $(this).parent('a');
-                if ($parent.length) {
-                    const href = $parent.attr('href');
-                    if (href && href !== displayUrl) {
-                        try {
-                            const displayDomain = new URL(displayUrl).hostname;
-                            const hrefDomain = new URL(href).hostname;
-                            if (displayDomain !== hrefDomain) {
-                                mismatches.push({
-                                    displayedUrl: displayUrl,
-                                    actualUrl: href,
-                                    displayDomain,
-                                    actualDomain: hrefDomain,
-                                    suspicious: true
-                                });
-                            }
-                        } catch (e) {
-                            logger.error('Error parsing URL:', e);
-                        }
+        // Find all anchor tags with href attributes
+        $('a[href]').each((index, element) => {
+            const displayedUrl = $(element).text().trim();
+            const actualUrl = $(element).attr('href').trim();
+
+            if (displayedUrl && actualUrl) {
+                try {
+                    const displayDomain = new URL(displayedUrl).hostname;
+                    const actualDomain = new URL(actualUrl).hostname;
+
+                    if (displayDomain !== actualDomain) {
+                        mismatches.push({
+                            displayedUrl,
+                            actualUrl,
+                            displayDomain,
+                            actualDomain,
+                            suspicious: true
+                        });
                     }
+                } catch (e) {
+                    logger.error('Error parsing URL:', e);
                 }
             }
         });

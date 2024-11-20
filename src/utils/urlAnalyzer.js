@@ -1,6 +1,7 @@
 import { LinkChecker } from 'linkinator';
 import logger from '../config/logger.js';
 import UrlUtils from './urlUtils.js';
+import { connectDB } from '../config/db.js';
 
 class UrlAnalyzer {
     constructor() {
@@ -30,7 +31,7 @@ class UrlAnalyzer {
 
             // Check with Safe Browsing API
             const safeBrowsingResults = await UrlUtils.checkUrlsWithSafeBrowsing([href]);
-            if (safeBrowsingResults.length > 0) {
+            if (safeBrowsingResults.length > 0 && safeBrowsingResults[0].suspicious) {
                 analysis.suspicious = true;
                 analysis.reasons.push('safe_browsing_threat');
                 analysis.security.safeBrowsing = safeBrowsingResults[0];
@@ -84,6 +85,8 @@ class UrlAnalyzer {
                 if (analysis.suspicious) {
                     flaggedUrls.push(analysis);
                 }
+                // Update the suspicious flag in the original URL object
+                urlObj.suspicious = analysis.suspicious;
             }
 
             logger.info('Extracted URLs:', allUrls);

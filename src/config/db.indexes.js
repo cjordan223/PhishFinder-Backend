@@ -2,89 +2,78 @@ import logger from '../config/logger.js';
 
 export async function createIndexes(db) {
   try {
-    // Emails collection indexes
-    await db.collection('emails').createIndexes([
-      { key: { id: 1 }, unique: true },
-      { key: { 'sender.address': 1 } },
-      { key: { 'sender.domain': 1 } },
-      { key: { 'receiver.address': 1 } },
-      { key: { 'receiver.domain': 1 } },
-      { key: { timestamp: -1 } },
-      { key: { senderProfileProcessed: 1 } }
-    ]);
+    // Create collections first
+    await Promise.all([
+      db.createCollection('emails'),
+      db.createCollection('sender_profiles'),
+      db.createCollection('whois'),
+      db.createCollection('domain_authentication')
+    ]).catch(err => {
+      // Ignore "Collection already exists" errors
+      if (!err.message.includes('Collection already exists')) {
+        throw err;
+      }
+    });
 
-    // Clean duplicates and create sender profiles indexes
-    const duplicates = await findAndCleanDuplicateSenderProfiles(db);
-    if (duplicates > 0) {
-      logger.info(`Cleaned up ${duplicates} duplicate sender profiles`);
-    }
+    logger.info('Collections created or verified');
+
+    // Drop existing indexes (except _id)
+    await Promise.all([
+      db.collection('emails').dropIndexes(),
+      db.collection('sender_profiles').dropIndexes(),
+      db.collection('whois').dropIndexes(),
+      db.collection('domain_authentication').dropIndexes()
+    ]).catch(err => {
+      // Ignore "ns does not exist" errors for new collections
+      if (!err.message.includes('ns does not exist')) {
+        throw err;
+      }
+    });
+
+    logger.info('Old indexes dropped');
+
+    // Create fresh indexes
+    await db.collection('emails').createIndexes([
+      { key: { id: 1 }, unique: true, name: "email_id_idx" },
+      { key: { 'sender.address': 1 }, name: "email_sender_address_idx" },
+      { key: { 'sender.domain': 1 }, name: "email_sender_domain_idx" },
+      { key: { 'receiver.address': 1 }, name: "email_receiver_address_idx" },
+      { key: { 'receiver.domain': 1 }, name: "email_receiver_domain_idx" },
+      { key: { timestamp: -1 }, name: "email_timestamp_idx" },
+      { key: { senderProfileProcessed: 1 }, name: "email_profile_processed_idx" }
+    ]);
 
     await db.collection('sender_profiles').createIndexes([
       { 
         key: { 'sender.address': 1 },
         unique: true,
         background: true,
+        name: "sender_address_idx",
         partialFilterExpression: { 'sender.address': { $exists: true } }
       },
-      { key: { 'sender.domain': 1 } },
-      { key: { lastUpdated: -1 } }
+      { key: { 'sender.domain': 1 }, name: "sender_domain_idx" },
+      { key: { lastUpdated: -1 }, name: "sender_last_updated_idx" }
     ]);
 
-    // WHOIS collection indexes
     await db.collection('whois').createIndexes([
-      { key: { domain: 1 }, unique: true },
-      { key: { createdAt: -1 } }
+      { key: { domain: 1 }, unique: true, name: "whois_domain_idx" },
+      { key: { createdAt: -1 }, name: "whois_created_idx" }
     ]);
 
-    // Domain authentication collection indexes
     await db.collection('domain_authentication').createIndexes([
       { 
-        key: { domain: 1, createdAt: -1 }, 
-        unique: true,
+        key: { domain: 1, createdAt: -1 },
+        name: "domain_auth_compound_idx",
         background: true 
       },
-      { key: { 'authentication.spf.status': 1 } },
-      { key: { 'authentication.dkim.status': 1 } },
-      { key: { 'authentication.dmarc.policy': 1 } }
+      { key: { 'authentication.spf.status': 1 }, name: "domain_auth_spf_idx" },
+      { key: { 'authentication.dkim.status': 1 }, name: "domain_auth_dkim_idx" },
+      { key: { 'authentication.dmarc.policy': 1 }, name: "domain_auth_dmarc_idx" }
     ]);
 
-    logger.info('Database indexes created successfully');
+    logger.info('All indexes created successfully');
   } catch (error) {
-    logger.error('Error creating database indexes:', error);
-    logger.warn('Continuing without all indexes...');
+    logger.error('Error setting up database:', error);
+    throw error; // Re-throw to handle in calling code
   }
 }
-
-async function findAndCleanDuplicateSenderProfiles(db) {
-  const pipeline = [
-    {
-      $group: {
-        _id: '$sender.address',
-        count: { $sum: 1 },
-        docs: { $push: '$_id' }
-      }
-    },
-    {
-      $match: {
-        count: { $gt: 1 }
-      }
-    }
-  ];
-
-  const duplicates = await db.collection('sender_profiles')
-    .aggregate(pipeline)
-    .toArray();
-
-  let cleanedCount = 0;
-  for (const dup of duplicates) {
-    // Keep the first document, remove others
-    const [keepId, ...removeIds] = dup.docs;
-    await db.collection('sender_profiles').deleteMany({
-      _id: { $in: removeIds }
-    });
-    cleanedCount += removeIds.length;
-  }
-
-  return cleanedCount;
-} 
-
