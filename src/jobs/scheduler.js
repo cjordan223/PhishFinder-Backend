@@ -1,22 +1,15 @@
 import { processUnprocessedEmails } from './updateSenderProfiles.js';
+import { updateRiskScores } from './updateRiskScores.js';
 import logger from '../config/logger.js';
 
-// this file exists to handle the creation of background jobs
-// right now it only handles the processing of sender profiles
-// in the future it could be expanded to handle other tasks
-
 export function startBackgroundJobs() {
-    // Run immediately on startup
-    processUnprocessedEmails().catch(error => {
-        logger.error('Error in initial sender profile processing:', error);
-    });
+    // Run both jobs on startup
+    processUnprocessedEmails();
+    updateRiskScores();
 
-    // Schedule to run every 5 minutes
-    setInterval(() => {
-        processUnprocessedEmails().catch(error => {
-            logger.error('Error in scheduled sender profile processing:', error);
-        });
-    }, 5 * 60 * 1000); // 5 minutes in milliseconds
+    // Schedule jobs
+    setInterval(processUnprocessedEmails, 5 * 60 * 1000);  // Every 5 minutes
+    setInterval(updateRiskScores, 5 * 60 * 1000);         // Every 5 minutes
 
-    logger.info('Background jobs scheduled successfully');
-} 
+    logger.info('Background jobs scheduled');
+}

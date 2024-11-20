@@ -84,6 +84,7 @@ export const analyzeEmail = async (req, res) => {
         }
 
         // 5. Analysis Results
+        // In analyzeEmail function, modify the analysisResult object:
         const analysisResult = {
             security: {
                 authentication: {
@@ -91,6 +92,7 @@ export const analyzeEmail = async (req, res) => {
                     dkim: dnsRecords.dkim,
                     dmarc: dnsRecords.dmarc,
                     summary: dnsRecords.summary
+                    // Remove riskScore from here since it's handled by the background job
                 },
                 analysis: {
                     isFlagged: flaggedUrls.length > 0 || suspiciousPatterns.length > 0 || urlMismatches.length > 0,
