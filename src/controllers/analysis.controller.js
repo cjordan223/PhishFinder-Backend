@@ -7,6 +7,7 @@ import { cleanEmailBody, extractReadableText, getTextMetrics } from '../utils/te
 import { extractOrganization, cleanOrgName } from '../utils/emailParser.js';
 import logger from '../config/logger.js';
 import { extractDisplayName, extractDomain } from '../utils/receiverUtils.js';
+import { connectDB } from '../config/db.js';
 
 export const analyzeEmail = async (req, res) => {
     const { 
@@ -202,6 +203,189 @@ export const analyzeEmail = async (req, res) => {
         res.status(500).json({ 
             success: false, 
             error: 'Error analyzing email',
+            details: error.message 
+        });
+    }
+};
+
+export const analyzeEmailOnly = async (req, res) => {
+    const { id } = req.params;
+    const { 
+        sender, 
+        subject, 
+        body, 
+        htmlBody,
+        timestamp,
+        headers,
+        parts,
+        labels,
+        historyId,
+        internalDate,
+        sizeEstimate,
+        rawPayload
+    } = req.body;
+
+    logger.info(`Analyzing email ${id} without persistence:`, {
+        sender,
+        subject,
+        bodyLength: body?.length,
+        timestamp
+    });
+
+    try {
+        // Input validation
+        if (!body && !htmlBody) {
+            throw new Error('Invalid input: email must have either body or htmlBody');
+        }
+
+        // Use htmlBody if available, otherwise use regular body
+        const emailBody = htmlBody || body;
+
+        // First get URL mismatches from raw body to preserve HTML structure
+        const urlMismatches = detectUrlMismatches(emailBody);
+        logger.info(`URL mismatches found:`, urlMismatches);
+
+        // Clean and prepare the body text for other analysis
+        const { preservedHtml, cleanedText } = cleanEmailBody(emailBody);
+        const readableText = extractReadableText(preservedHtml);
+
+        // URL Analysis
+        const htmlUrls = extractUrlsFromHtml(preservedHtml);
+        const textUrls = extractUrlsFromText(readableText);
+        const allUrls = [...new Set([...htmlUrls, ...textUrls])];
+        logger.info(`Extracted URLs:`, allUrls);
+
+        // Safe Browsing Check
+        const safeBrowsingApiKey = process.env.SAFE_BROWSING_API_KEY;
+        if (!safeBrowsingApiKey) {
+            throw new Error('SAFE_BROWSING_API_KEY is not configured');
+        }
+        
+        const flaggedUrls = await checkUrlsWithSafeBrowsing(allUrls.map(urlObj => urlObj.url));
+        logger.info(`Flagged URLs:`, flaggedUrls);
+
+        // Pattern Analysis
+        const suspiciousPatterns = analyzeSuspiciousPatterns(readableText, subject);
+        logger.info(`Suspicious patterns: ${JSON.stringify(suspiciousPatterns)}`);
+
+        // DNS Authentication
+        let dnsRecords = {
+            spf: null,
+            dkim: null,
+            dmarc: null,
+            summary: 'DNS checks not performed'
+        };
+
+        if (sender?.domain) {
+            dnsRecords = await getEmailAuthenticationDetails(sender.domain);
+            logger.info(`DNS records: ${JSON.stringify(dnsRecords)}`);
+        }
+
+        // Prepare Analysis Result
+        const analysisResult = {
+            security: {
+                authentication: {
+                    spf: dnsRecords.spf,
+                    dkim: dnsRecords.dkim,
+                    dmarc: dnsRecords.dmarc,
+                    summary: dnsRecords.summary
+                },
+                analysis: {
+                    isFlagged: flaggedUrls.length > 0 || suspiciousPatterns.length > 0 || urlMismatches.length > 0,
+                    suspiciousKeywords: suspiciousPatterns,
+                    linkRisks: allUrls.map(url => ({
+                        url: url.url,
+                        isSuspicious: url.suspicious || flaggedUrls.some(f => f.url === url.url),
+                        threatType: flaggedUrls.find(f => f.url === url.url)?.threatType || null,
+                        mismatch: urlMismatches.find(m => m.actualUrl === url.url)
+                    })),
+                    safeBrowsingResult: flaggedUrls,
+                    urlMismatches: urlMismatches
+                }
+            },
+            behavioral: {
+                category: determineCategory(labels, subject, cleanedText),
+                requiresResponse: determineIfResponseRequired(subject, readableText, labels),
+                priority: labels.includes('IMPORTANT') ? 'high' : 'normal',
+                isThread: labels.includes('SENT') || headers.some(h => h.name === 'In-Reply-To'),
+                threadId: headers.find(h => h.name === 'Thread-Index')?.value || null
+            }
+        };
+
+        res.json({
+            success: true,
+            ...analysisResult
+        });
+
+    } catch (error) {
+        logger.error(`Error analyzing email: ${error.message}`);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error analyzing email',
+            details: error.message 
+        });
+    }
+};
+
+export const getEmailAnalysis = async (req, res) => {
+    const { id } = req.params;
+    
+    try {
+        const db = await connectDB();
+        const email = await db.collection('emails').findOne({ id });
+        
+        if (!email) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Email not found' 
+            });
+        }
+
+        // Transform the stored email data into the analysis result format
+        const analysisResult = {
+            security: {
+                authentication: {
+                    spf: email.security.authentication.spf.record,
+                    dkim: email.security.authentication.dkim.record,
+                    dmarc: email.security.authentication.dmarc.record,
+                    summary: `SPF: ${email.security.authentication.spf.status}, 
+                             DKIM: ${email.security.authentication.dkim.status}, 
+                             DMARC: ${email.security.authentication.dmarc.policy}`
+                },
+                analysis: {
+                    isFlagged: email.security.flags.safebrowsingFlag || 
+                              email.security.flags.hasSuspiciousPatterns || 
+                              email.security.flags.hasUrlMismatches,
+                    suspiciousKeywords: email.security.suspiciousPatterns || [],
+                    linkRisks: email.content.metrics.extractedUrls.map(url => ({
+                        url: url.url,
+                        isSuspicious: url.suspicious,
+                        threatType: null, // Add this if you store it
+                        mismatch: email.content.metrics.urlMismatches.find(m => m.actualUrl === url.url)
+                    })),
+                    safeBrowsingResult: [], // Add this if you store it
+                    urlMismatches: email.content.metrics.urlMismatches
+                }
+            },
+            behavioral: {
+                category: email.behavioral?.category || 'general',
+                requiresResponse: email.behavioral?.requiresResponse || false,
+                priority: email.behavioral?.priority || 'normal',
+                isThread: email.behavioral?.isThread || false,
+                threadId: email.behavioral?.threadId || null
+            }
+        };
+
+        res.json({
+            success: true,
+            ...analysisResult
+        });
+
+    } catch (error) {
+        logger.error(`Error retrieving email analysis: ${error.message}`);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error retrieving email analysis',
             details: error.message 
         });
     }
