@@ -6,7 +6,8 @@ const router = express.Router();
 router.post('/saveEmailAnalysis', analyzeEmail);
 router.post('/ai-analyze', analyzeAIContent);
 router.post('/analyze-email', analyzeEmail);  // Use analyzeEmail for persistence
-router.get('/email/:id', getEmailAnalysis);   // Use getEmailAnalysis for retrieval
+router.get('/email/:id', getEmailAnalysis);   // Use getEmailAnalysis for retrieval on FE
 router.post('/analyze-only/:id', analyzeEmailOnly);  // Use analyzeEmailOnly for analysis without persistence
+
 
 export default router;
