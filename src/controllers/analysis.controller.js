@@ -390,3 +390,71 @@ export const getEmailAnalysis = async (req, res) => {
         });
     }
 };
+
+export const getSenderProfile = async (req, res) => {
+    const { email } = req.params;
+    
+    try {
+        const db = await connectDB();
+        const senderProfile = await db.collection('sender_profiles')
+            .findOne({ 'sender.address': email });
+        
+        if (!senderProfile) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Sender profile not found' 
+            });
+        }
+
+        // Transform the data for frontend consumption
+        const profileData = {
+            sender: {
+                address: senderProfile.sender.address,
+                displayName: senderProfile.sender.displayName,
+                domain: senderProfile.sender.domain,
+                firstSeen: senderProfile.sender.firstSeen,
+                organization: senderProfile.sender.organization
+            },
+            securityMetrics: senderProfile.securityMetrics || {
+                totalEmails: 0,
+                suspiciousEmails: 0,
+                suspiciousLinkCount: 0,
+                phishingLinkCount: 0,
+                unwantedSoftwareCount: 0,
+                suspiciousKeywordCount: 0
+            },
+            languageProfile: senderProfile.languageProfile || {
+                averageSentenceLength: 0,
+                commonPhrases: [],
+                topicAnalysis: []
+            },
+            recentEmails: (senderProfile.emails || [])
+                .slice(0, 5)
+                .map(email => ({
+                    id: email.id,
+                    subject: email.subject,
+                    timestamp: email.timestamp,
+                    isFlagged: email.isFlagged
+                })),
+            stats: {
+                totalEmails: senderProfile.emails?.length || 0,
+                firstSeen: senderProfile.sender.firstSeen,
+                lastUpdated: senderProfile.lastUpdated,
+                authenticationHistory: senderProfile.lastAuthenticationStatus
+            }
+        };
+
+        res.json({
+            success: true,
+            profile: profileData
+        });
+
+    } catch (error) {
+        logger.error(`Error retrieving sender profile: ${error.message}`);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error retrieving sender profile',
+            details: error.message 
+        });
+    }
+};
