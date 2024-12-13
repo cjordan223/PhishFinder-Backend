@@ -1,211 +1,142 @@
 
-# PhishFinder-Backend
+# PhishFinder Backend
 
-[](https://github.com/cjordan223/PhishFinder-Backend/blob/main/README.md#phishfinder-backend)
+## Technical Architecture
 
-Handles API and sensitive data. Email objects are sent to a cloud DB for storage and analytics.
+### Core Technologies
+- Node.js/Express.js Backend server
+- MongoDB for data persistence
+- Docker for containerization
+- Natural Language Processing for content analysis using Wink NLP
 
-[Front End Code](https://github.com/cjordan223/PhishFinder/)
+### Analysis Pipeline
 
-## Project Structure
+#### 1. Email Processing & Analysis
+- **Content Cleaning & Extraction**
+  - HTML sanitization and text extraction
+  - Metadata parsing
+  - URL extraction
 
-[](https://github.com/cjordan223/PhishFinder-Backend/blob/main/README.md#project-structure)
 
-The project is organized as follows:
+- **Security Analysis**
+  - Pattern matching for suspicious content
+  - URL/link analysis
+  - Domain authentication
 
--   **src**: Main source folder containing the core application files.
-    
-    -   **tests**: Unit tests for various components.
-    -   **config**: Configuration files.
-        -   `db.js`: Database configuration and connection.
-        -   `logger.js`: Logger configuration.
-    -   **controllers**: Handles HTTP requests and responses.
-        -   `analysis.controller.js`: Controller for analysis endpoints.
-        -   `dns.controller.js`: Controller for DNS endpoints.
-        -   `metrics.controller.js`: Controller for metrics endpoints.
-        -   `whois.controller.js`: Controller for WHOIS endpoints.
-    -   **jobs**: Scheduled jobs and background tasks.
-        -   `scheduler.js`: Scheduler for running jobs.
-        -   `updateSenderProfiles.js`: Job for updating sender profiles.
-    -   **middleware**: Middleware functions.
-        -   `cors.middleware.js`: Handles CORS.
-    -   **routes**: Route definitions for different endpoints.
-        -   `analysis.routes.js`, `dns.routes.js`, etc.
-    -   **services**: Business logic and application services.
-        -   Includes `analysis.service.js`, `cache.service.js`, etc.
-    -   **utils**: Utility functions for common operations.
-        -   Examples: `emailParser.js`, `urlUtils.js`.
-    -   `server.js`: Main server entry point.
--   **package.json**: Project metadata and dependencies.
-    
 
-_**^^This needs the .env file added with the secrets/keys/id's added to the root, or it won't run.**_
+#### 2. Authentication Verification
+- **DNS Record Analysis**
+  - SPF record verification
+  - DKIM validation
+  - DMARC policy checking
 
-```
-git clone https://github.com/cjordan223/PhishFinder-Backend.git
-cd https://github.com/cjordan223/PhishFinder-Backend.git
-npm install
-docker compose up -d
-```
 
-Let the container start up for WHOIS server, then run
+#### 3. Sender Profiling
+- **Language Analysis**
+  - Topic modeling
+  - Writing style analysis
+  - Pattern recognition
 
-```
-node index.js
-```
 
-## High Level
+#### 4. URL Analysis
+- **Link Safety Verification**
+  - Google Safe Browsing API integration
+  - URL mismatch detection
+  - Domain reputation checking
 
-[](https://github.com/cjordan223/PhishFinder-Backend/blob/main/README.md#high-level)
 
-### Core Architecture
+## Installation
 
-[](https://github.com/cjordan223/PhishFinder-Backend/blob/main/README.md#core-architecture)
+1. Clone the repository:
+	```
+	git clone https://github.com/cjordan223/PhishFinder-Backend.git
+	cd PhishFinder-Backend
+	npm install
+	```
 
-The project follows a client-server architecture:
+2. Configure environment variables:
+Create a `.env` file with:
 
-1.  Frontend (Vue.js)
+	- MONGO_URI=your_mongodb_uri from Mongo Atlas
+    - SAFE_BROWSING_API_KEY= GMAIL API Key
+    - AI_API_TOKEN=your_AI_token (copyleaks, winston etc)
+    - PORT=8080
+3. Start the server and service
+	```
+	docker compose up -d
+	node index.js
+	```
 
--   User interface for email analysis
-    
--   Real-time updates and visualizations
-    
--   Authentication and profile management
-    
--   Backend (Node.js)
-    
--   Email processing and analysis
-    
--   Language profiling
-    
--   Security scoring
-    
+## API Endpoints
 
-### Main Flow
+### Analysis Endpoints
+- `POST /analysis/analyze-email`: Analyze email content
+- `GET /analysis/email/:id`: Retrieve email analysis
+- `GET /analysis/sender/:email`: Get sender profile
+- `POST /analysis/ai-analyze`: AI-powered content analysis
 
-[](https://github.com/cjordan223/PhishFinder-Backend/blob/main/README.md#main-flow)
+### DNS Endpoints
+- `GET /dns/:domain`: Fetch DNS authentication records
+- `POST /dns/verify`: Verify email authentication
 
--   User Authentication
-    
--   User logs in/registers
-    
--   OAuth2 authentication with email providers
-    
--   Session management
-    
+### WHOIS Endpoints
+- `GET /whois/:domain`: Fetch WHOIS data
+- `POST /whois/:domain/:emailId`: Update WHOIS data
 
-**- Email Processing**
+## Security Features
 
-```
-User Email → Gmail API → Raw Email Data → Parser → Structured Data
+### 1. Content Analysis
+- Suspicious pattern detection
+- Keyword analysis
+- Language profiling
+- Content categorization
 
-```
+### 2. URL Security
+- Safe Browsing API integration
+- URL mismatch detection
+- Domain reputation checking
+- Redirect chain analysis
 
-**- Analysis Pipeline**
+### 3. Sender Authentication
+- SPF record verification
+- DKIM validation
+- DMARC policy checking
+- Domain authentication status
 
-```
-Structured Email
+### 4. Behavioral Analysis
+- Sender profiling
+- Communication pattern analysis
+- Historical data analysis
+- Risk assessment
 
-↓
+## Data Storage
 
-Language Profile Analysis
+### MongoDB Collections
+- `emails`: Email analysis results
+- `sender_profiles`: Sender behavior profiles
+- `whois`: Domain WHOIS data
+- `metrics`: Analysis metrics
 
-↓
+## Error Handling
+- Comprehensive error logging
+- Request validation
+- Rate limiting
+- API error responses
 
-Security Analysis
+## Future Enhancements
+- Enhanced AI analysis capabilities
+- Real-time threat intelligence integration
+- Advanced behavioral analysis
+- Extended metrics and reporting
+- Machine learning model integration
 
-↓
+## Contributing
+1. Fork the repository
+2. Create a feature branch
+3. Commit changes
+4. Push to the branch
+5. Create a Pull Request
 
-Risk Assessment
+## License
+This project is licensed under the MIT License.
 
-```
-
-### Key Objects/Services
-
-[](https://github.com/cjordan223/PhishFinder-Backend/blob/main/README.md#key-objectsservices)
-
--   **EmailAnalysisService**
-    
-    
-    - Handles email parsing and initial processing
-    
-    - Creates structured email objects
-    
-    - Manages analysis workflow
-    
-    
-    
--   **SenderLanguageProfileService**
-    
-    
-    -   Builds sender profiles
-    
-      - Topic analysis
-    
-      - Writing style analysis
-    
-     - Pattern recognition
-    
-    
-    
--   **SecurityAnalysisService**
-    
-
-	   -  URL analysis
-    
-	 -  Header analysis
-    
-      - Threat scoring
-    
-     - UserService
-    
-     - User management
-    
-     - Profile settings
-    
-     - Authentication
-    
-
-    
-
-### Data Flow
-
-[](https://github.com/cjordan223/PhishFinder-Backend/blob/main/README.md#data-flow)
-
-User → Frontend → API Gateway
-
-↓
-
-Backend Services
-
-↓
-
-Database (MongoDB)
-
-### Key Features
-
-[](https://github.com/cjordan223/PhishFinder-Backend/blob/main/README.md#key-features)
-
--   Language Analysis
-    
--   Topic modeling
-    
--   Sentiment analysis
-    
--   Pattern detection
-    
--   Security Checks
-    
--   URL verification
-    
-- Header analysis
-    
--   Content scanning
-    
--   Profile Building
-    
--   Sender behavior patterns
-    
--   Communication style
-    
--   Historical analysis
